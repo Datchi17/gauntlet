@@ -1,0 +1,46 @@
+<!--
+  PurpleLoop detection — SSH brute force (MITRE T1110.001)
+  Reused from the author's grficsv2-siem-defense project; fixture #1 in M1.
+  Silences Wazuh's built-in composite rules (5712/5763) and replaces them with a
+  single clear brute-force rule that carries an ATT&CK id, so the scorer can join
+  the alert to the attacker's T1110.001 action.
+
+  Validate against the fixture with:
+    /var/ossec/bin/wazuh-logtest < detections/fixtures/ssh_bruteforce.log
+  (expect rule 100200 to fire at level 10)
+-->
+<group name="local,syslog,sshd,authentication_failures,">
+
+  <rule id="5712" level="0" overwrite="yes">
+    <if_matched_sid>5710</if_matched_sid>
+    <same_source_ip />
+    <description>sshd: brute force (non-existent user) - silenced, superseded by 100200</description>
+  </rule>
+
+  <rule id="5763" level="0" overwrite="yes">
+    <if_matched_sid>5760</if_matched_sid>
+    <same_source_ip />
+    <description>sshd: multiple authentication failures - silenced, superseded by 100201</description>
+  </rule>
+
+  <rule id="100200" level="10" frequency="5" timeframe="120" ignore="60">
+    <if_matched_sid>5710</if_matched_sid>
+    <same_source_ip />
+    <description>SSH brute force: 5 failed logins (non-existent user) from $(srcip) within 120 seconds</description>
+    <group>authentication_failures,brute_force,</group>
+    <mitre>
+      <id>T1110.001</id>
+    </mitre>
+  </rule>
+
+  <rule id="100201" level="10" frequency="5" timeframe="120" ignore="60">
+    <if_matched_sid>5760</if_matched_sid>
+    <same_source_ip />
+    <description>SSH brute force: 5 authentication failures (wrong password) from $(srcip) within 120 seconds</description>
+    <group>authentication_failures,brute_force,</group>
+    <mitre>
+      <id>T1110.001</id>
+    </mitre>
+  </rule>
+
+</group>

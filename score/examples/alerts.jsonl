@@ -1,0 +1,3 @@
+{"ts":"2026-11-14T18:30:13Z","host":"10.10.0.12","rule_id":"100200","technique":"T1110.001","source":"wazuh","severity":10,"run_id":"demo"}
+{"ts":"2026-11-14T18:31:14Z","host":"10.10.0.11","rule_id":"zeek-http-rce","technique":"T1190","source":"zeek","severity":8,"run_id":"demo"}
+{"ts":"2026-11-14T18:40:02Z","host":"10.10.0.14","rule_id":"5501","technique":"T1078","source":"wazuh","severity":3,"run_id":"demo"}

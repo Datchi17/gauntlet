@@ -1,0 +1,10 @@
+Nov 14 18:30:00 target sshd[2001]: Invalid user admin from 10.10.0.99 port 51000
+Nov 14 18:30:01 target sshd[2001]: Failed password for invalid user admin from 10.10.0.99 port 51000 ssh2
+Nov 14 18:30:03 target sshd[2003]: Invalid user admin from 10.10.0.99 port 51002
+Nov 14 18:30:04 target sshd[2003]: Failed password for invalid user admin from 10.10.0.99 port 51002 ssh2
+Nov 14 18:30:06 target sshd[2005]: Invalid user admin from 10.10.0.99 port 51004
+Nov 14 18:30:07 target sshd[2005]: Failed password for invalid user admin from 10.10.0.99 port 51004 ssh2
+Nov 14 18:30:09 target sshd[2007]: Invalid user admin from 10.10.0.99 port 51006
+Nov 14 18:30:10 target sshd[2007]: Failed password for invalid user admin from 10.10.0.99 port 51006 ssh2
+Nov 14 18:30:12 target sshd[2009]: Invalid user admin from 10.10.0.99 port 51008
+Nov 14 18:30:13 target sshd[2009]: Failed password for invalid user admin from 10.10.0.99 port 51008 ssh2

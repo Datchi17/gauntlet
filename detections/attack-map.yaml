@@ -1,0 +1,24 @@
+# Which detection rule covers which MITRE ATT&CK (Enterprise) technique.
+# The scorer uses `technique` to join attacker actions to SIEM alerts, so this
+# file is the contract between the offensive log and the defensive rules.
+coverage:
+  - technique: T1110.001          # Brute Force: Password Guessing
+    name: "SSH brute force"
+    source: wazuh
+    rule_ids: [100200, 100201]
+    fixture: fixtures/ssh_bruteforce.log
+    status: implemented
+
+  - technique: T1190              # Exploit Public-Facing Application
+    name: "Web RCE (Drupalgeddon / WordPress)"
+    source: zeek
+    rule_ids: []
+    fixture: null
+    status: todo                  # M1 backlog
+
+  - technique: T1548.001          # Abuse Elevation Control: SUID
+    name: "SUID privesc"
+    source: wazuh
+    rule_ids: []
+    fixture: null
+    status: todo                  # M1 backlog

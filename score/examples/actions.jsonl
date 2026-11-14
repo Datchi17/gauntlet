@@ -1,0 +1,4 @@
+{"ts":"2026-11-14T18:30:00Z","host":"10.10.0.12","port":22,"technique":"T1110.001","tool":"hydra","action":"ssh-bruteforce","expect_detect":true,"run_id":"demo"}
+{"ts":"2026-11-14T18:31:10Z","host":"10.10.0.11","port":80,"technique":"T1190","tool":"drupalgeddon2","action":"web-rce","expect_detect":true,"run_id":"demo"}
+{"ts":"2026-11-14T18:33:40Z","host":"10.10.0.11","port":0,"technique":"T1548.001","tool":"find","action":"suid-privesc","expect_detect":true,"run_id":"demo"}
+{"ts":"2026-11-14T18:35:00Z","host":"10.10.0.13","port":445,"technique":"T1135","tool":"smbclient","action":"share-enum","expect_detect":false,"run_id":"demo"}

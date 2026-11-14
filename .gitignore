@@ -1,0 +1,30 @@
+# VM images are huge and not rebuildable — never commit them
+*.ova
+*.ovi
+*.vmdk
+*.vdi
+*.vbox
+*.zip
+*.rar
+*.7z
+*.tar.bz2
+
+# real run output (contains data from live scans)
+/out/
+/runs/
+actions.jsonl
+alerts.jsonl
+!score/examples/actions.jsonl
+!score/examples/alerts.jsonl
+
+# secrets / env
+.env
+*.key
+*.pem
+id_*
+
+# python
+__pycache__/
+*.pyc
+.venv/
+.pytest_cache/

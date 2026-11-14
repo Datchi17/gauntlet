@@ -1,0 +1,54 @@
+# PurpleLoop target inventory — starter set picked from ~/Downloads/Test Machines/
+# agent: can this box carry a modern Wazuh agent? (host-based detection)
+#        false => network-only, covered by Zeek alone.
+# verify: the agent flag is a first-boot assumption until confirmed (an M0 task).
+
+boxes:
+  - name: dc-1
+    archive: "DC-1.zip"
+    os: "Debian ~2019"
+    agent: true
+    ip: 10.10.0.11
+    chain: "Drupalgeddon2 web RCE -> www-data -> SUID find privesc"
+    attack_techniques: [T1190, T1059.004, T1548.001]
+    role: "primary host+network target"
+
+  - name: basic-pentesting-1
+    archive: "basic_pentesting_1.ova"
+    os: "Ubuntu"
+    agent: true
+    ip: 10.10.0.12
+    chain: "weak FTP/SSH creds + SSH brute force -> Linux privesc"
+    attack_techniques: [T1110.001, T1078, T1068]
+    role: "validates the SSH brute-force rule -> M1 fixture #1"
+
+  - name: symfonos-1
+    archive: "symfonos1.7z"
+    os: "Debian"
+    agent: true
+    ip: 10.10.0.13
+    chain: "SMB -> LFI -> SMTP log poisoning -> shell -> PATH privesc"
+    attack_techniques: [T1135, T1083, T1059.004, T1574.007]
+    role: "report already written = ground truth in hand"
+
+  - name: mr-robot
+    archive: "mrRobot.ova"
+    os: "Ubuntu ~2015"
+    agent: true
+    ip: 10.10.0.14
+    chain: "WordPress brute force -> wp shell -> SUID nmap privesc"
+    attack_techniques: [T1110.001, T1059.004, T1548.001]
+    role: "rich web + brute-force signal"
+
+  - name: kioptrix-1
+    archive: "Kioptrix_Level_1.rar"
+    os: "Linux 2.4 (~2010)"
+    agent: false            # too old for a modern agent -> Zeek only
+    ip: 10.10.0.21
+    chain: "ancient Apache/mod_ssl (OpenFuck) + Samba RCE"
+    attack_techniques: [T1190]
+    role: "network-only showcase: proves Zeek-for-all when no agent can run"
+
+# deferred for later breadth: dc-2..9, tr0ll 1-3, brainpan 1-3 (exploit-dev,
+# weak detection value), kioptrix2014 (FreeBSD), lampiao (DirtyCow - good later
+# as a deliberately hard-to-detect case). kioptrix-l3: bonus net-only w/ report.
