@@ -1,0 +1,21 @@
+---
+# Wazuh version + the matching wazuh-docker git tag (keep them in lockstep).
+wazuh_version: "4.9.2"
+wazuh_docker_tag: "v4.9.2"
+
+# Repo root on the SIEM host. Adjust if you cloned elsewhere.
+repo_root: "/home/datchi/Projects/purple-loop"
+siem_dir: "{{ repo_root }}/lab/siem"
+wazuh_docker_dir: "{{ siem_dir }}/wazuh-docker"
+single_node_dir: "{{ wazuh_docker_dir }}/single-node"
+
+# Address agents connect to = this host's IP on the host-only network.
+# Default vboxnet0 is 192.168.56.1; PurpleLoop assumes 10.10.0.0/24, so set the
+# host-only net to 10.10.0.1 or change this to match your actual setup.
+manager_ip: "10.10.0.1"
+
+# Host-only interface Zeek sniffs.
+pl_iface: "vboxnet0"
+
+# NTP upstream — clock discipline is critical for a trustworthy MTTD.
+ntp_server: "pool.ntp.org"

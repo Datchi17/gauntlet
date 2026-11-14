@@ -28,3 +28,8 @@ __pycache__/
 *.pyc
 .venv/
 .pytest_cache/
+
+# SIEM: fetched upstream stack, generated certs, zeek logs
+lab/siem/wazuh-docker/
+lab/siem/zeek/logs/
+**/config/wazuh_indexer_ssl_certs/

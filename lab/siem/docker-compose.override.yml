@@ -1,0 +1,27 @@
+# Layered automatically on top of the upstream wazuh-docker single-node
+# docker-compose.yml (Ansible copies this file next to it, so `docker compose`
+# merges it by name). It does two PurpleLoop things:
+#   1. mounts our tested detection rules into the manager (detection-as-code),
+#   2. adds Zeek, sniffing the host-only lab segment so EVERY target -- even the
+#      ancient ones that can't run an agent -- feeds network detections.
+services:
+  wazuh.manager:
+    volumes:
+      - ${REPO_ROOT}/detections/rules/ssh_bruteforce_rules.xml:/var/ossec/etc/rules/ssh_bruteforce_rules.xml:ro
+      - zeek_logs:/zeek-logs:ro
+
+  zeek:
+    image: zeek/zeek:${ZEEK_VERSION:-6.0}
+    container_name: pl-zeek
+    restart: unless-stopped
+    network_mode: host                 # must see the host-only lab interface
+    cap_add: [NET_ADMIN, NET_RAW]
+    volumes:
+      - ${REPO_ROOT}/lab/siem/zeek/local.zeek:/usr/local/zeek/share/zeek/site/local.zeek:ro
+      - zeek_logs:/zeek-logs
+    working_dir: /zeek-logs
+    command: ["zeek", "-i", "${PL_IFACE:-vboxnet0}",
+              "/usr/local/zeek/share/zeek/site/local.zeek"]
+
+volumes:
+  zeek_logs:

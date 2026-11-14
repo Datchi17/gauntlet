@@ -1,0 +1,8 @@
+---
+# PurpleLoop M0 — stand up the whole range.
+#   ansible-playbook site.yml                 # everything
+#   ansible-playbook playbooks/siem.yml       # just the SIEM
+#   ansible-playbook playbooks/agents.yml     # just (re)enroll agents
+- import_playbook: playbooks/siem.yml
+- import_playbook: playbooks/built-target.yml
+- import_playbook: playbooks/agents.yml

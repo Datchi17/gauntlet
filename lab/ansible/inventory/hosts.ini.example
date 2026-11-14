@@ -1,0 +1,13 @@
+# Copy to hosts.ini and fill in real host-only IPs.
+
+[siem]
+localhost ansible_connection=local          # the SIEM runs on this Kali host
+
+[built_target]
+# the clean Ubuntu detection box you provision (host-based detection + pinned clock)
+# ubuntu-clean ansible_host=10.10.0.10 ansible_user=ops
+
+[agent_targets]
+# agent-capable VulnHub boxes (best-effort: ancient boxes are skipped, Zeek covers them)
+# dc-1               ansible_host=10.10.0.11 ansible_user=root
+# basic-pentesting-1 ansible_host=10.10.0.12 ansible_user=root

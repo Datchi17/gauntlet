@@ -1,0 +1,58 @@
+---
+# Best-effort Wazuh-agent enrollment on the agent-capable VulnHub boxes.
+# Old images may lack a working apt repo or a compatible OS; that's expected —
+# the block/rescue skips them cleanly and they stay network-only (Zeek covers them).
+- name: Enroll agents on agent-capable targets
+  hosts: agent_targets
+  become: true
+  gather_facts: true
+
+  tasks:
+    - name: Install and enroll the Wazuh agent (best-effort)
+      block:
+        - name: Pin the clock (best-effort)
+          ansible.builtin.command: timedatectl set-ntp true
+          changed_when: false
+          failed_when: false
+
+        - name: Import the Wazuh apt signing key
+          ansible.builtin.get_url:
+            url: https://packages.wazuh.com/key/GPG-KEY-WAZUH
+            dest: /tmp/wazuh.key
+            mode: "0644"
+
+        - name: Dearmor the key into the keyring
+          ansible.builtin.command:
+            cmd: gpg --batch --yes -o /usr/share/keyrings/wazuh.gpg --dearmor /tmp/wazuh.key
+            creates: /usr/share/keyrings/wazuh.gpg
+
+        - name: Add the Wazuh apt repository
+          ansible.builtin.apt_repository:
+            repo: "deb [signed-by=/usr/share/keyrings/wazuh.gpg] https://packages.wazuh.com/4.x/apt/ stable main"
+            filename: wazuh
+            state: present
+
+        - name: Install the Wazuh agent (enrolled against the manager)
+          ansible.builtin.apt:
+            name: wazuh-agent
+            state: present
+            update_cache: true
+          environment:
+            WAZUH_MANAGER: "{{ manager_ip }}"
+
+        - name: Enable and start the agent
+          ansible.builtin.service:
+            name: wazuh-agent
+            state: started
+            enabled: true
+
+        - name: Agent enrolled
+          ansible.builtin.debug:
+            msg: "{{ inventory_hostname }}: host-based detection active."
+
+      rescue:
+        - name: Too old / incompatible — leaving it network-only
+          ansible.builtin.debug:
+            msg: >
+              {{ inventory_hostname }}: agent install failed (likely too old).
+              This box stays NETWORK-ONLY; Zeek still sees its traffic.

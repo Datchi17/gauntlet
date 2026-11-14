@@ -1,0 +1,101 @@
+---
+# Stand up the SIEM: Wazuh single-node (indexer + manager + dashboard) + Zeek.
+# Runs on the Kali host itself (connection: local).
+- name: SIEM stack (Wazuh single-node + Zeek)
+  hosts: siem
+  become: true
+  gather_facts: true
+
+  tasks:
+    - name: Install Docker, the compose plugin, and git
+      ansible.builtin.apt:
+        name:
+          - docker.io
+          - docker-compose-v2
+          - git
+        state: present
+        update_cache: true
+
+    - name: Ensure Docker is running
+      ansible.builtin.service:
+        name: docker
+        state: started
+        enabled: true
+
+    # The indexer (OpenSearch) refuses to start without this.
+    - name: Raise vm.max_map_count for the indexer
+      ansible.posix.sysctl:
+        name: vm.max_map_count
+        value: "262144"
+        sysctl_set: true
+        state: present
+        reload: true
+
+    - name: Fetch the upstream wazuh-docker stack at the pinned tag
+      ansible.builtin.git:
+        repo: https://github.com/wazuh/wazuh-docker.git
+        dest: "{{ wazuh_docker_dir }}"
+        version: "{{ wazuh_docker_tag }}"
+        depth: 1
+      become: false
+
+    - name: Look for already-generated indexer certs
+      ansible.builtin.stat:
+        path: "{{ single_node_dir }}/config/wazuh_indexer_ssl_certs/root-ca.pem"
+      register: pl_certs
+
+    - name: Generate indexer certificates (one-time)
+      ansible.builtin.command:
+        cmd: docker compose -f generate-indexer-certs.yml run --rm generator
+        chdir: "{{ single_node_dir }}"
+      when: not pl_certs.stat.exists
+      changed_when: true
+
+    - name: Drop the PurpleLoop compose override next to the upstream compose
+      ansible.builtin.copy:
+        src: "{{ siem_dir }}/docker-compose.override.yml"
+        dest: "{{ single_node_dir }}/docker-compose.override.yml"
+        mode: "0644"
+
+    - name: Write the .env the override reads (REPO_ROOT / interface / versions)
+      ansible.builtin.copy:
+        dest: "{{ single_node_dir }}/.env"
+        mode: "0644"
+        content: |
+          WAZUH_VERSION={{ wazuh_version }}
+          ZEEK_VERSION=6.0
+          PL_IFACE={{ pl_iface }}
+          REPO_ROOT={{ repo_root }}
+          PL_MANAGER_IP={{ manager_ip }}
+
+    - name: Wire Zeek log ingestion into the manager config
+      ansible.builtin.blockinfile:
+        path: "{{ single_node_dir }}/config/wazuh_cluster/wazuh_manager.conf"
+        marker: "<!-- {mark} PURPLELOOP ZEEK INGEST -->"
+        insertbefore: "</ossec_config>"
+        block: "{{ lookup('file', siem_dir + '/config/zeek-localfile.conf') }}"
+
+    - name: Bring the stack up (indexer + manager + dashboard + zeek)
+      ansible.builtin.command:
+        cmd: docker compose up -d
+        chdir: "{{ single_node_dir }}"
+      changed_when: true
+
+    - name: Wait for the Wazuh API (manager) on 55000
+      ansible.builtin.wait_for:
+        host: 127.0.0.1
+        port: 55000
+        timeout: 300
+
+    - name: Wait for the dashboard on 443
+      ansible.builtin.wait_for:
+        host: 127.0.0.1
+        port: 443
+        timeout: 300
+
+    - name: SIEM is up
+      ansible.builtin.debug:
+        msg:
+          - "Dashboard: https://{{ manager_ip }} (default login admin / see wazuh-docker .env)"
+          - "Agents enroll against {{ manager_ip }}:1515, report to :1514"
+          - "Zeek is sniffing {{ pl_iface }}; logs flow into the manager as JSON."
