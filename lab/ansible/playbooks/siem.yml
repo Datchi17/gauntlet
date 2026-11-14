@@ -7,11 +7,10 @@
   gather_facts: true
 
   tasks:
-    - name: Install Docker, the compose plugin, and git
+    - name: Install Docker engine and git
       ansible.builtin.apt:
         name:
           - docker.io
-          - docker-compose-v2
           - git
         state: present
         update_cache: true
@@ -21,6 +20,27 @@
         name: docker
         state: started
         enabled: true
+
+    # Kali has no docker-compose-v2 package, so install Compose v2 as a Docker
+    # CLI plugin binary (works on any distro, no extra apt repo).
+    - name: Ensure the Docker CLI-plugins directory exists
+      ansible.builtin.file:
+        path: /usr/local/lib/docker/cli-plugins
+        state: directory
+        mode: "0755"
+
+    - name: Check whether 'docker compose' v2 already works
+      ansible.builtin.command: docker compose version
+      register: pl_compose
+      changed_when: false
+      failed_when: false
+
+    - name: Install the Docker Compose v2 plugin
+      ansible.builtin.get_url:
+        url: https://github.com/docker/compose/releases/latest/download/docker-compose-linux-x86_64
+        dest: /usr/local/lib/docker/cli-plugins/docker-compose
+        mode: "0755"
+      when: pl_compose.rc != 0
 
     # The indexer (OpenSearch) refuses to start without this.
     - name: Raise vm.max_map_count for the indexer
