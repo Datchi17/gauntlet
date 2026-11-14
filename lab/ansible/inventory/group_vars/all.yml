@@ -12,7 +12,7 @@ single_node_dir: "{{ wazuh_docker_dir }}/single-node"
 # Address agents connect to = this host's IP on the host-only network.
 # Default vboxnet0 is 192.168.56.1; PurpleLoop assumes 10.10.0.0/24, so set the
 # host-only net to 10.10.0.1 or change this to match your actual setup.
-manager_ip: "10.10.0.1"
+manager_ip: "192.168.95.1"
 
 # Host-only interface Zeek sniffs.
 pl_iface: "vboxnet0"
