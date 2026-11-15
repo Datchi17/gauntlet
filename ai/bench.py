@@ -156,7 +156,7 @@ def render(rows: list[dict], provider_name: str) -> str:
 
 def main() -> int:
     p = argparse.ArgumentParser(description="Gauntlet LLM-recon benchmark")
-    p.add_argument("--provider", default="ollama", choices=["ollama", "dry-run", "replay"])
+    p.add_argument("--provider", default="ollama", choices=["ollama", "api", "dry-run", "replay"])
     p.add_argument("--replay-file", help="for --provider replay")
     p.add_argument("--cases", type=Path, default=HERE / "cases")
     p.add_argument("--out", type=Path)

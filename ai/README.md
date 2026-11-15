@@ -22,3 +22,26 @@ python3 -m pytest ai/ -q                    # scorer tests
 
 Latest run: [`BENCHMARK.md`](BENCHMARK.md). Frontier models (Claude/OpenAI) plug in
 as another `providers.py` subclass behind an API key; the default stays fully local.
+
+## Free frontier-class models (no credit card)
+
+The `api` provider works with any OpenAI-compatible endpoint, including free tiers.
+Use your own free key — nothing here spends money.
+
+```bash
+# Groq (free, no card) — a big model (Llama 3.3 70B)
+GAUNTLET_API_BASE=https://api.groq.com/openai/v1 \
+GAUNTLET_API_MODEL=llama-3.3-70b-versatile \
+GAUNTLET_API_KEY=gsk_your_free_key \
+  python3 ai/bench.py --provider api --out ai/BENCHMARK_groq.md
+
+# Google Gemini (free via AI Studio, no card)
+GAUNTLET_API_BASE=https://generativelanguage.googleapis.com/v1beta/openai \
+GAUNTLET_API_MODEL=gemini-2.5-flash \
+GAUNTLET_API_KEY=your_free_key \
+  python3 ai/bench.py --provider api --out ai/BENCHMARK_gemini.md
+```
+
+Get a free Groq key at console.groq.com or a Gemini key at aistudio.google.com.
+Rate limits and model names change — check the provider page. Our cases are
+synthetic (public CVEs, fake endpoints), so free-tier data-use terms don't matter here.

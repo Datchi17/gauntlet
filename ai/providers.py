@@ -57,11 +57,42 @@ class Ollama:
             return json.loads(r.read())["response"]
 
 
+class OpenAICompatible:
+    """Any OpenAI-compatible chat endpoint — works with free, no-card providers:
+      Groq:   GAUNTLET_API_BASE=https://api.groq.com/openai/v1              MODEL=llama-3.3-70b-versatile
+      Gemini: GAUNTLET_API_BASE=https://generativelanguage.googleapis.com/v1beta/openai  MODEL=gemini-2.5-flash
+    Set GAUNTLET_API_BASE, GAUNTLET_API_MODEL, GAUNTLET_API_KEY (your own free key)."""
+    name = "api"
+
+    def __init__(self):
+        self.base = os.environ.get("GAUNTLET_API_BASE", "").rstrip("/")
+        self.model = os.environ.get("GAUNTLET_API_MODEL", "")
+        self.key = os.environ.get("GAUNTLET_API_KEY", "")
+        if not (self.base and self.model and self.key):
+            raise SystemExit("set GAUNTLET_API_BASE, GAUNTLET_API_MODEL and GAUNTLET_API_KEY "
+                             "(see ai/README.md for free Groq/Gemini setup)")
+
+    def generate(self, prompt: str) -> str:
+        body = json.dumps({
+            "model": self.model,
+            "messages": [{"role": "user", "content": prompt}],
+            "temperature": 0.2,
+        }).encode()
+        req = urllib.request.Request(
+            self.base + "/chat/completions", data=body,
+            headers={"Content-Type": "application/json", "Authorization": f"Bearer {self.key}"},
+        )
+        with urllib.request.urlopen(req, timeout=120) as r:
+            return json.loads(r.read())["choices"][0]["message"]["content"]
+
+
 def get(provider: str, **kw):
     if provider == "dry-run":
         return DryRun()
     if provider == "ollama":
         return Ollama(**{k: v for k, v in kw.items() if k in ("url", "model")})
+    if provider == "api":
+        return OpenAICompatible()
     if provider == "replay":
         return Replay(Path(kw["file"]).read_text())
     raise SystemExit(f"unknown provider: {provider}")
