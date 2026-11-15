@@ -25,8 +25,13 @@ revert:  ## reset all targets to their clean snapshot
 status:  ## show lab VM + SIEM state
 	@VBoxManage list runningvms 2>/dev/null || echo "VirtualBox not found"
 
-run:  ## run an attack scenario (M2: SCENARIO=attack/scenarios/<file>)
-	@echo "TODO (M2): execute $${SCENARIO:-a scenario} and write runs/<id>/actions.jsonl"
+SCENARIO ?= attack/scenarios/ssh-bruteforce-localhost.yaml
+
+run:  ## run an attack scenario, writing ground truth (SCENARIO=attack/scenarios/<file>)
+	$(PYTHON) attack/run_scenario.py $(SCENARIO)
+
+loop:  ## full loop: attack -> pull real alerts -> score (SCENARIO=...)
+	bash attack/run_loop.sh $(SCENARIO)
 
 score:  ## score the latest run (defaults to the bundled example)
 	$(PYTHON) score/scorer.py $(if $(RUN),--actions runs/$(RUN)/actions.jsonl --alerts runs/$(RUN)/alerts.jsonl,)

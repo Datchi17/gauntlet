@@ -1,0 +1,14 @@
+# M2 scenario — the one we proved by hand in Stage 5, now reproducible.
+# SSH brute force against the Kali host's own sshd (monitored by the kali-target
+# agent). Each step becomes one actions.jsonl ground-truth record.
+name: ssh-bruteforce-localhost
+target: "127.0.0.1"          # where the attack is sent ({target} in argv below)
+agent: "kali-target"         # the Wazuh agent on that host — the join key for alerts
+steps:
+  - action: ssh-bruteforce
+    tool: hydra
+    technique: T1110.001       # Brute Force: Password Guessing
+    expect_detect: true        # rule 100200 should catch this
+    # 10 login attempts for a non-existent user -> >=5 sshd "Invalid user"
+    # events from one IP within 120s -> rule 100200 fires.
+    argv: ["hydra", "-l", "gauntletfake", "-x", "1:1:abcdefghij", "-t", "4", "ssh://{target}"]
