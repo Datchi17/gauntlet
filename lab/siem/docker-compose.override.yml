@@ -7,7 +7,11 @@
 services:
   wazuh.manager:
     volumes:
-      - ${REPO_ROOT}/detections/rules/ssh_bruteforce_rules.xml:/var/ossec/etc/rules/ssh_bruteforce_rules.xml:ro
+      # Deliver custom rules via /wazuh-config-mount — the entrypoint copies it
+      # into /var/ossec/etc/rules at boot. Do NOT mount directly into
+      # /var/ossec/etc/* : that nests inside the wazuh_etc named volume and stops
+      # Docker from populating it with the image defaults, so the manager won't start.
+      - ${REPO_ROOT}/detections/rules/ssh_bruteforce_rules.xml:/wazuh-config-mount/etc/rules/ssh_bruteforce_rules.xml:ro
       - zeek_logs:/zeek-logs:ro
 
   zeek:
