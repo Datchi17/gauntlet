@@ -1,6 +1,6 @@
 # Threat model (stub — fill during M1/M3)
 
-What PurpleLoop measures, and the honest boundaries of those measurements.
+What Gauntlet measures, and the honest boundaries of those measurements.
 
 - **Attacker modeled:** a remote adversary on the lab network running known
   exploit chains against the targets.

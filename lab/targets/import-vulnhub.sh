@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
-# Import a VulnHub box into VirtualBox and take the 'clean' snapshot PurpleLoop
-# reverts to between runs. This is PurpleLoop's "rebuild" button for pre-built
+# Import a VulnHub box into VirtualBox and take the 'clean' snapshot Gauntlet
+# reverts to between runs. This is Gauntlet's "rebuild" button for pre-built
 # images: the OS is not built from code, so reproducibility = archive + this script.
 #
 # Usage: ./import-vulnhub.sh <name> <path-to-.ova>
@@ -22,6 +22,6 @@ echo "[*] attaching NIC1 to host-only $NET (isolated lab network)"
 VBoxManage modifyvm "$NAME" --nic1 hostonly --hostonlyadapter1 "$NET"
 
 echo "[*] taking 'clean' snapshot"
-VBoxManage snapshot "$NAME" take clean --description "pristine PurpleLoop state"
+VBoxManage snapshot "$NAME" take clean --description "pristine Gauntlet state"
 
 echo "[+] $NAME ready. Revert anytime with: ./revert.sh $NAME"

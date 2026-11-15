@@ -71,7 +71,7 @@
       when: not pl_certs.stat.exists
       changed_when: true
 
-    - name: Drop the PurpleLoop compose override next to the upstream compose
+    - name: Drop the Gauntlet compose override next to the upstream compose
       ansible.builtin.copy:
         src: "{{ siem_dir }}/docker-compose.override.yml"
         dest: "{{ single_node_dir }}/docker-compose.override.yml"
@@ -91,7 +91,7 @@
     - name: Wire Zeek log ingestion into the manager config
       ansible.builtin.blockinfile:
         path: "{{ single_node_dir }}/config/wazuh_cluster/wazuh_manager.conf"
-        marker: "<!-- {mark} PURPLELOOP ZEEK INGEST -->"
+        marker: "<!-- {mark} GAUNTLET ZEEK INGEST -->"
         insertbefore: "</ossec_config>"
         block: "{{ lookup('file', siem_dir + '/config/zeek-localfile.conf') }}"
 

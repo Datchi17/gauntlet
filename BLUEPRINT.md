@@ -1,4 +1,4 @@
-# PurpleLoop — Blueprint v1.1
+# Gauntlet — Blueprint v1.1
 
 > Working name; rename freely. A reproducible, **lab-as-code** security range where an
 > AI-assisted offensive agent attacks disposable targets, a Wazuh/Zeek SIEM tries to detect
@@ -17,7 +17,7 @@ measurement discipline, and a milestone path you can build against one weekend a
 ## 1. Thesis (why this is research-grade, not a demo)
 
 Most "AI pentest" and "detection" projects **assert** value; they don't **measure** it.
-PurpleLoop's single contribution is *measurement discipline*, made possible because you own
+Gauntlet's single contribution is *measurement discipline*, made possible because you own
 both the attacks and the targets, so the ground truth is knowable:
 
 - **Offense:** does the LLM layer add signal over plain tooling — and how often does it lie?
@@ -102,7 +102,7 @@ VulnHub VMs you already have (`~/Downloads/Test Machines/`), so there's nothing 
 Chosen for: known/documented vulns (**ground truth**), attack chains that generate *detectable*
 events (brute-force, web RCE, reverse shells, privesc), and whether the OS can carry a Wazuh agent.
 
-| Box | Attack chain (ground truth) | Agent? | Role in PurpleLoop |
+| Box | Attack chain (ground truth) | Agent? | Role in Gauntlet |
 |---|---|---|---|
 | **DC-1** | Drupalgeddon2 web RCE → `www-data` → SUID `find` privesc | ✅ Debian ~2019 | primary host+network target |
 | **Basic Pentesting 1** | weak FTP/SSH creds + SSH brute-force → Linux privesc | ✅ Ubuntu | validates your SSH brute-force rule → M1 **fixture #1** |
@@ -142,7 +142,7 @@ events (brute-force, web RCE, reverse shells, privesc), and whether the OS can c
 - Emit `report.md`: the coverage matrix (technique × detected?), the numbers, the gaps.
 - **Feedback step:** each undetected technique opens an issue / seeds a new M1 fixture. That edge
   in the diagram is what makes it a *loop*, not a pipeline.
-- **Done when:** `purpleloop run <scenario>` produces a report a stranger can read in 30 seconds.
+- **Done when:** `gauntlet run <scenario>` produces a report a stranger can read in 30 seconds.
 
 ### M4 — The AI layer, honestly benchmarked (the research payload)
 - Add the LLM agent (ReconAI's AI layer) that proposes/triages attack steps.
@@ -193,7 +193,7 @@ action_time + N s). Both files carry `run_id` so a run is fully reproducible and
 ## 6. Repo layout
 
 ```text
-purple-loop/
+gauntlet/
   lab/                # M0: the range (mixed VMs, host-only network)
     targets/          #   VulnHub import + snapshot-revert scripts; one built Ubuntu target
     siem/             #   wazuh single-node + zeek

@@ -1,4 +1,4 @@
-# PurpleLoop — one entry point for the loop.
+# Gauntlet — one entry point for the loop.
 # Many targets are thin wrappers that fill in as M0..M4 land; `make score` and
 # `make test` already work today on the bundled examples.
 

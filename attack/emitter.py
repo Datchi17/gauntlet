@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-PurpleLoop action emitter (M2).
+Gauntlet action emitter (M2).
 
 Every offensive step the harness runs is logged here as ONE ground-truth record
 in actions.jsonl. That labeled log is what makes measurement possible: the scorer
@@ -52,7 +52,7 @@ class Emitter:
 
 
 def main() -> int:
-    p = argparse.ArgumentParser(description="append one PurpleLoop action record")
+    p = argparse.ArgumentParser(description="append one Gauntlet action record")
     p.add_argument("--out", required=True)
     p.add_argument("--run-id", required=True)
     p.add_argument("--host", required=True)

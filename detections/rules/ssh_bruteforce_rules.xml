@@ -1,5 +1,5 @@
 <!--
-  PurpleLoop detection — SSH brute force (MITRE T1110.001)
+  Gauntlet detection — SSH brute force (MITRE T1110.001)
   Reused from the author's grficsv2-siem-defense project; fixture #1 in M1.
   Silences Wazuh's built-in composite rules (5712/5763) and replaces them with a
   single clear brute-force rule that carries an ATT&CK id, so the scorer can join

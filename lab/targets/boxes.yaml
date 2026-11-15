@@ -1,4 +1,4 @@
-# PurpleLoop target inventory — starter set picked from ~/Downloads/Test Machines/
+# Gauntlet target inventory — starter set picked from ~/Downloads/Test Machines/
 # agent: can this box carry a modern Wazuh agent? (host-based detection)
 #        false => network-only, covered by Zeek alone.
 # verify: the agent flag is a first-boot assumption until confirmed (an M0 task).

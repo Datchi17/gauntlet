@@ -23,7 +23,7 @@ ansible-playbook site.yml --check         # dry run
 ## Things to set first (`group_vars/all.yml`)
 - `repo_root` — where this repo lives on the SIEM host.
 - `manager_ip` — this host's IP **on the host-only network**. Default vboxnet0 is
-  `192.168.56.1`; PurpleLoop assumes `10.10.0.1`, so set the host-only net to match
+  `192.168.56.1`; Gauntlet assumes `10.10.0.1`, so set the host-only net to match
   or change this. Agents enroll here (`:1515`) and report here (`:1514`).
 - `ntp_server` — clock discipline; a trustworthy MTTD depends on it.
 

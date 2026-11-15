@@ -1,7 +1,7 @@
 # lab/siem/ — Wazuh single-node + Zeek (M0)
 
 The defensive half of the range. Built on the upstream **wazuh-docker single-node**
-stack (indexer + manager + dashboard), with two PurpleLoop additions layered on by
+stack (indexer + manager + dashboard), with two Gauntlet additions layered on by
 `docker-compose.override.yml`:
 
 1. our tested detection rules are mounted into the manager (detection-as-code), and

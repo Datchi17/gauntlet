@@ -1,6 +1,6 @@
 # Scope & authorized use
 
-PurpleLoop is a **lab-only** tool. It exists to attack machines you own, on an
+Gauntlet is a **lab-only** tool. It exists to attack machines you own, on an
 isolated network, to measure your own detections.
 
 - The offensive harness runs **only** against the bundled lab targets on the

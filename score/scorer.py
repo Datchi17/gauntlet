@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-PurpleLoop scorer — the heart of the loop (M3).
+Gauntlet scorer — the heart of the loop (M3).
 
 Joins the attacker's ground-truth action log (actions.jsonl) to the SIEM's
 alert log (alerts.jsonl) on (host, technique, time-window), then computes the
@@ -110,7 +110,7 @@ def render_md(res: dict, window: int) -> str:
     cov = f"{res['coverage'] * 100:.0f}%"
     mttd = "n/a" if res["mttd"] is None else f"{res['mttd']:.1f}s"
     lines = [
-        "# PurpleLoop run report",
+        "# Gauntlet run report",
         "",
         f"- **Detection coverage:** {cov}  ({res['n_detected']}/{res['n_expected']} expected techniques caught)",
         f"- **MTTD (median):** {mttd}",
@@ -132,7 +132,7 @@ def render_md(res: dict, window: int) -> str:
 
 
 def main() -> int:
-    p = argparse.ArgumentParser(description="PurpleLoop scorer")
+    p = argparse.ArgumentParser(description="Gauntlet scorer")
     p.add_argument("--actions", type=Path, default=HERE / "examples" / "actions.jsonl")
     p.add_argument("--alerts", type=Path, default=HERE / "examples" / "alerts.jsonl")
     p.add_argument("--window", type=int, default=120, help="join window in seconds")

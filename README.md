@@ -1,4 +1,4 @@
-# PurpleLoop
+# Gauntlet
 
 A small, self-contained **purple-team range** you run on your own machine. An
 AI-assisted attacker hits deliberately vulnerable targets, a Wazuh/Zeek SIEM
@@ -10,7 +10,7 @@ how much was caught, how fast, and (for the AI) how often it made things up.
 
 ## Why
 
-Most "AI pentest" and "detection" projects *assert* they work. PurpleLoop
+Most "AI pentest" and "detection" projects *assert* they work. Gauntlet
 **measures** it, because you own both the attacks and the targets, so the ground
 truth is knowable. Full rationale and plan: [`BLUEPRINT.md`](BLUEPRINT.md).
 
