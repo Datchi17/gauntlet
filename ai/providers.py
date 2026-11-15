@@ -13,8 +13,20 @@ from __future__ import annotations
 
 import json
 import os
+import urllib.error
 import urllib.request
 from pathlib import Path
+
+
+def _post_json(req: urllib.request.Request, timeout: int) -> dict:
+    """Open a request, returning parsed JSON — and on an HTTP error, surface the
+    server's response body (APIs explain *why* there, not in the status line)."""
+    try:
+        with urllib.request.urlopen(req, timeout=timeout) as r:
+            return json.loads(r.read())
+    except urllib.error.HTTPError as e:
+        body = e.read().decode("utf-8", "replace")[:1000]
+        raise SystemExit(f"HTTP {e.code} from {req.full_url}\n{body}") from None
 
 
 class DryRun:
@@ -53,8 +65,7 @@ class Ollama:
             self.url + "/api/generate", data=body,
             headers={"Content-Type": "application/json"},
         )
-        with urllib.request.urlopen(req, timeout=300) as r:
-            return json.loads(r.read())["response"]
+        return _post_json(req, timeout=300)["response"]
 
 
 class OpenAICompatible:
@@ -80,10 +91,16 @@ class OpenAICompatible:
         }).encode()
         req = urllib.request.Request(
             self.base + "/chat/completions", data=body,
-            headers={"Content-Type": "application/json", "Authorization": f"Bearer {self.key}"},
+            headers={
+                "Content-Type": "application/json",
+                "Authorization": f"Bearer {self.key}",
+                # Some providers (Groq) front their API with Cloudflare, which bans
+                # the default "Python-urllib/x" signature with a 403 (error 1010).
+                # A generic client UA passes; we send no personal/identifying info.
+                "User-Agent": "gauntlet-bench/1.0",
+            },
         )
-        with urllib.request.urlopen(req, timeout=120) as r:
-            return json.loads(r.read())["choices"][0]["message"]["content"]
+        return _post_json(req, timeout=120)["choices"][0]["message"]["content"]
 
 
 def get(provider: str, **kw):
