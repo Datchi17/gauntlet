@@ -1,0 +1,37 @@
+<!--
+  Gauntlet network detections — Zeek telemetry (ingested as JSON into the manager).
+  These cover EVERY target on the lab segment, including ancient boxes that can't
+  run a Wazuh agent (Zeek sniffs the wire). Validated via wazuh-logtest against
+  Zeek-JSON fixtures in detections/fixtures/.
+-->
+<group name="gauntlet,zeek,">
+
+  <!-- ===== Discovery: Network Service Scanning (T1046) ===== -->
+  <!-- A Zeek connection that got no/failed response — the shape of a scan probe. -->
+  <rule id="100300" level="2">
+    <decoded_as>json</decoded_as>
+    <field name="conn_state" type="pcre2">^(S0|REJ|RSTR|RSTOS0)$</field>
+    <description>Gauntlet: Zeek connection with no/failed response (scan-like)</description>
+    <group>gauntlet_zeek_conn,</group>
+  </rule>
+
+  <!-- Many probe connections in a short window = a port/service scan. -->
+  <rule id="100301" level="10" frequency="15" timeframe="20">
+    <if_matched_sid>100300</if_matched_sid>
+    <description>Gauntlet: network service scan — many probe connections in a short window</description>
+    <group>gauntlet_discovery,</group>
+    <mitre><id>T1046</id></mitre>
+  </rule>
+
+  <!-- ===== Initial Access: Exploit Public-Facing Application (T1190) ===== -->
+  <!-- Suspicious URI in a Zeek HTTP request: command injection, traversal, LFI. -->
+  <rule id="100310" level="10">
+    <decoded_as>json</decoded_as>
+    <field name="method" type="pcre2">.+</field>
+    <field name="uri" type="pcre2">(?i)(/etc/passwd|\.\./|;|\$\(|/bin/sh|/bin/bash|cmd=|`|wget\s|curl\s)</field>
+    <description>Gauntlet: suspicious URI in Zeek HTTP request — possible web exploit</description>
+    <group>gauntlet_web_exploit,</group>
+    <mitre><id>T1190</id></mitre>
+  </rule>
+
+</group>

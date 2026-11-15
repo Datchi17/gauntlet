@@ -1,0 +1,6 @@
+## Gauntlet (T1548.001): tag execve syscalls where a process gains euid 0 while
+## the real uid is non-root — i.e. SUID-root execution. Deploy on monitored hosts:
+##   sudo cp gauntlet-suid.rules /etc/audit/rules.d/ && sudo augenrules --load
+## The Wazuh agent ships /var/log/audit/audit.log; rule 100320 matches key=gauntlet_suid.
+-a always,exit -F arch=b64 -S execve -C uid!=euid -F euid=0 -F key=gauntlet_suid
+-a always,exit -F arch=b32 -S execve -C uid!=euid -F euid=0 -F key=gauntlet_suid

@@ -1,0 +1,1 @@
+type=SYSCALL msg=audit(1700000200.123:789): arch=c000003e syscall=59 success=yes exit=0 a0=7f items=2 ppid=1500 pid=2500 auid=1001 uid=1001 gid=1001 euid=0 suid=0 fsuid=0 egid=1001 sgid=1001 fsgid=1001 tty=pts1 ses=5 comm="bash" exe="/tmp/rootshell" key="gauntlet_suid"

@@ -96,31 +96,30 @@ coverage:
     fixture: fixtures/password_changed.log
     status: implemented
 
-  # ---------- Backlog: need extra telemetry (next batch) ----------
-  # T1548.001 (SUID execution) needs auditd execve logging with a watch key on
-  #   SUID binaries, then a Wazuh rule on the audit events — a per-host agent
-  #   config, not a log-line fixture.
-  # T1190 (web RCE) and T1046 (network service scan) are NETWORK detections: they
-  #   need Zeek http/conn log decoders + live traffic to validate, which is the
-  #   M1-network batch (Zeek is already ingested into the manager).
-  - technique: T1548.001
-    tactic: privilege-escalation
-    name: "Abuse Elevation Control: SUID execution"
-    source: wazuh-auditd
-    rule_ids: []
-    fixture: null
-    status: planned-needs-auditd
-  - technique: T1190
-    tactic: initial-access
-    name: "Exploit Public-Facing Application (web RCE)"
-    source: zeek
-    rule_ids: []
-    fixture: null
-    status: planned-needs-zeek
+  # ---------- Discovery (Zeek network telemetry) ----------
   - technique: T1046
     tactic: discovery
     name: "Network Service Scanning (nmap)"
     source: zeek
-    rule_ids: []
-    fixture: null
-    status: planned-needs-zeek
+    rule_ids: [100301]
+    fixture: fixtures/zeek_portscan.log
+    status: implemented
+
+  # ---------- Initial Access (Zeek network telemetry) ----------
+  - technique: T1190
+    tactic: initial-access
+    name: "Exploit Public-Facing Application (web RCE)"
+    source: zeek
+    rule_ids: [100310]
+    fixture: fixtures/zeek_web_rce.log
+    status: implemented
+
+  # ---------- Privilege Escalation (auditd execve telemetry) ----------
+  # Needs detections/auditd/gauntlet-suid.rules deployed on the monitored host.
+  - technique: T1548.001
+    tactic: privilege-escalation
+    name: "Abuse Elevation Control: SUID-root execution"
+    source: wazuh-auditd
+    rule_ids: [100320]
+    fixture: fixtures/auditd_suid.log
+    status: implemented

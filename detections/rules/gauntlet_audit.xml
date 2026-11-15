@@ -1,0 +1,22 @@
+<!--
+  Gauntlet host detection — auditd (execve) telemetry.
+  Detects a binary that gains euid 0 while the real user is non-root (SUID-root
+  execution) — a classic Linux privilege-escalation primitive. Requires the audit
+  rule in detections/auditd/gauntlet-suid.rules deployed on the monitored host
+  (it tags matching execve syscalls with key=gauntlet_suid). Validated via
+  wazuh-logtest against detections/fixtures/auditd_suid.log.
+-->
+<group name="gauntlet,audit,">
+
+  <!-- ===== Privilege Escalation: Abuse Elevation Control - Setuid (T1548.001) ===== -->
+  <!-- The audit rule already enforces euid=0 && uid!=euid at the kernel level and
+       tags matching execve with key=gauntlet_suid, so the key is the filter. -->
+  <rule id="100320" level="12">
+    <if_sid>80700</if_sid>
+    <field name="audit.key" type="pcre2">gauntlet_suid</field>
+    <description>Gauntlet: SUID-root binary executed by a non-root user — privilege escalation</description>
+    <group>gauntlet_privesc,</group>
+    <mitre><id>T1548.001</id></mitre>
+  </rule>
+
+</group>
