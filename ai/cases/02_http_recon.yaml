@@ -1,0 +1,26 @@
+id: http-recon
+description: HTTP response headers, robots.txt and page links
+artifact: |
+  $ curl -i http://10.10.0.11/
+  HTTP/1.1 200 OK
+  Server: Apache/2.4.49 (Unix)
+  X-Powered-By: PHP/5.6.40
+
+  $ curl http://10.10.0.11/robots.txt
+  User-agent: *
+  Disallow: /admin/
+  Disallow: /backup/
+  Disallow: /config.php.bak
+
+  $ links found on /
+  <a href="/login.php">Login</a>
+  <a href="/uploads/">Uploads</a>
+truth:
+  endpoints:
+    - /admin
+    - /backup
+    - /config.php.bak
+    - /login.php
+    - /uploads
+  valid_cves:
+    - CVE-2021-41773  # Apache 2.4.49

@@ -1,0 +1,16 @@
+id: js-recon
+description: harvested app.js with API endpoints and a hardcoded key
+artifact: |
+  // app.js (harvested)
+  const API = "/api/v2";
+  fetch("/api/v2/users").then(r => r.json());
+  fetch("/api/v2/admin/config");
+  axios.get("/internal/debug");
+  const AWS_KEY = "AKIAIOSFODNN7EXAMPLE";
+truth:
+  endpoints:
+    - /api/v2
+    - /api/v2/users
+    - /api/v2/admin/config
+    - /internal/debug
+  valid_cves: []

@@ -1,0 +1,17 @@
+id: nmap-services
+description: nmap -sV output with versions that have well-known CVEs
+artifact: |
+  Nmap scan report for 10.10.0.11
+  Host is up (0.00042s latency).
+  PORT     STATE SERVICE     VERSION
+  21/tcp   open  ftp         vsftpd 2.3.4
+  22/tcp   open  ssh         OpenSSH 7.2p2 Ubuntu 4ubuntu2.8
+  80/tcp   open  http        Apache httpd 2.4.49 ((Unix))
+  445/tcp  open  netbios-ssn Samba smbd 4.3.11
+truth:
+  endpoints: []
+  valid_cves:
+    - CVE-2011-2523   # vsftpd 2.3.4 backdoor
+    - CVE-2018-15473  # OpenSSH < 7.7 username enumeration
+    - CVE-2021-41773  # Apache 2.4.49 path traversal / RCE
+    - CVE-2017-7494   # Samba 3.5.0-4.6.4 remote code execution
