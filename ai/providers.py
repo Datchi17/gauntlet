@@ -13,20 +13,32 @@ from __future__ import annotations
 
 import json
 import os
+import re
+import time
 import urllib.error
 import urllib.request
 from pathlib import Path
 
 
-def _post_json(req: urllib.request.Request, timeout: int) -> dict:
-    """Open a request, returning parsed JSON — and on an HTTP error, surface the
-    server's response body (APIs explain *why* there, not in the status line)."""
-    try:
-        with urllib.request.urlopen(req, timeout=timeout) as r:
-            return json.loads(r.read())
-    except urllib.error.HTTPError as e:
-        body = e.read().decode("utf-8", "replace")[:1000]
-        raise SystemExit(f"HTTP {e.code} from {req.full_url}\n{body}") from None
+def _post_json(req: urllib.request.Request, timeout: int, retries: int = 6) -> dict:
+    """Open a request, returning parsed JSON. On a 429 (rate limit) back off and
+    retry — free tiers cap tokens/minute; the server tells us how long to wait.
+    On any other HTTP error, surface the response body (APIs explain *why* there)."""
+    for attempt in range(retries + 1):
+        try:
+            with urllib.request.urlopen(req, timeout=timeout) as r:
+                return json.loads(r.read())
+        except urllib.error.HTTPError as e:
+            body = e.read().decode("utf-8", "replace")
+            if e.code == 429 and attempt < retries:
+                # prefer Retry-After header, else the "try again in Xs" in the body
+                ra = e.headers.get("retry-after")
+                m = re.search(r"try again in ([\d.]+)s", body)
+                wait = float(ra) if ra else (float(m.group(1)) if m else 2.0)
+                time.sleep(min(wait + 0.5, 30))
+                continue
+            raise SystemExit(f"HTTP {e.code} from {req.full_url}\n{body[:1000]}") from None
+    raise SystemExit("exhausted retries")  # unreachable
 
 
 class DryRun:

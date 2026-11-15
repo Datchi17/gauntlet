@@ -109,20 +109,23 @@ def aggregate(rows: list[dict], which: str) -> dict:
     }
 
 
-def render(rows: list[dict], provider_name: str) -> str:
+def render(rows: list[dict], provider_name: str, runs: int = 1) -> str:
     llm = aggregate(rows, "llm")
     base = aggregate(rows, "base")
     novel = sorted({e for r in rows for e in r["novel"]})
     halluc_pct = (llm["halluc"] / llm["cited"]) if llm["cited"] else 0.0
-    earns = len(novel) > llm["halluc"] and halluc_pct < 0.20
+    # novel is a union over all runs; compare against the mean hallucinations/run
+    mean_halluc = llm["halluc"] / runs
+    earns = len(novel) > mean_halluc and halluc_pct < 0.20
     verdict = "**earns its place**" if earns else "**does NOT clearly earn its place**"
+    n_cases = len({r["id"] for r in rows})
     out = [
         "# Gauntlet LLM-recon benchmark",
         "",
         f"- **Model under test:** {provider_name}",
-        f"- **Cases:** {len(rows)}",
-        f"- **Verdict:** this model {verdict} — novel signal {len(novel)} vs "
-        f"{llm['halluc']} hallucinated findings ({llm['hallucination']} of what it cited).",
+        f"- **Cases:** {n_cases} × {runs} run(s) = {len(rows)} scored passes",
+        f"- **Verdict:** this model {verdict} — novel signal {len(novel)} distinct real "
+        f"findings vs {mean_halluc:.1f} hallucinated/run ({llm['hallucination']} of what it cited).",
         "",
         "| Metric | Deterministic baseline | LLM |",
         "|---|---|---|",
@@ -134,14 +137,19 @@ def render(rows: list[dict], provider_name: str) -> str:
         f"**Novel signal** — real entities the LLM surfaced that the baseline could not "
         f"({len(novel)}): {', '.join(novel) if novel else 'none'}",
         "",
-        "## Per-case",
+        "## Per-case" + (f" (mean of {runs} runs)" if runs > 1 else ""),
         "",
         "| Case | LLM cited | LLM TP | LLM hallucinated | baseline TP |",
         "|---|---|---|---|---|",
     ]
+    by_id: dict[str, list[dict]] = {}
     for r in rows:
-        out.append(f"| {r['id']} | {r['llm']['cited']} | {r['llm']['tp']} | "
-                   f"{r['llm']['halluc']} | {r['base']['tp']} |")
+        by_id.setdefault(r["id"], []).append(r)
+    for cid, rs in by_id.items():
+        n = len(rs)
+        mean = lambda side, k: sum(x[side][k] for x in rs) / n  # noqa: E731
+        out.append(f"| {cid} | {mean('llm','cited'):.1f} | {mean('llm','tp'):.1f} | "
+                   f"{mean('llm','halluc'):.1f} | {mean('base','tp'):.1f} |")
     out += [
         "",
         "## Reading this",
@@ -157,6 +165,7 @@ def render(rows: list[dict], provider_name: str) -> str:
 def main() -> int:
     p = argparse.ArgumentParser(description="Gauntlet LLM-recon benchmark")
     p.add_argument("--provider", default="ollama", choices=["ollama", "api", "dry-run", "replay"])
+    p.add_argument("--runs", type=int, default=1, help="passes per case; metrics pooled over all runs")
     p.add_argument("--replay-file", help="for --provider replay")
     p.add_argument("--cases", type=Path, default=HERE / "cases")
     p.add_argument("--out", type=Path)
@@ -169,12 +178,14 @@ def main() -> int:
 
     rows = []
     for c in cases:
-        llm_text = prov.generate(PROMPT.replace("{artifact}", c["artifact"]))
-        rows.append(score_case(c, llm_text))
-        print(f"[*] {c['id']}: cited={rows[-1]['llm']['cited']} "
-              f"tp={rows[-1]['llm']['tp']} halluc={rows[-1]['llm']['halluc']}", file=sys.stderr)
+        for i in range(args.runs):
+            llm_text = prov.generate(PROMPT.replace("{artifact}", c["artifact"]))
+            rows.append(score_case(c, llm_text))
+            tag = f"{c['id']} run {i + 1}/{args.runs}" if args.runs > 1 else c["id"]
+            print(f"[*] {tag}: cited={rows[-1]['llm']['cited']} "
+                  f"tp={rows[-1]['llm']['tp']} halluc={rows[-1]['llm']['halluc']}", file=sys.stderr)
 
-    report = render(rows, getattr(prov, "model", prov.name))
+    report = render(rows, getattr(prov, "model", prov.name), runs=args.runs)
     print(report)
     if args.out:
         args.out.write_text(report)
