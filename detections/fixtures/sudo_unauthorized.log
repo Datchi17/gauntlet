@@ -1,0 +1,1 @@
+Nov 15 18:45:00 target sudo:  mallory : user NOT in sudoers ; TTY=pts/0 ; PWD=/home/mallory ; USER=root ; COMMAND=/bin/bash

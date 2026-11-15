@@ -1,0 +1,93 @@
+<!--
+  Gauntlet detection catalog — Linux host telemetry (auth.log / syslog).
+
+  Each rule builds on a Wazuh base rule verified with wazuh-logtest (if_sid /
+  if_matched_sid) and carries its MITRE ATT&CK technique. SSH brute force lives in
+  ssh_bruteforce_rules.xml (100200/100201); this file covers the rest of the
+  Linux kill chain. Every rule has a fixture in detections/fixtures/ and a test in
+  detections/test_detections.py. Full matrix: detections/attack-map.yaml.
+
+  Validate the whole catalog:  python3 -m pytest detections/ -q   (on the SIEM host)
+-->
+<group name="gauntlet,syslog,">
+
+  <!-- ============ Valid Accounts (T1078) ============ -->
+  <rule id="100203" level="4">
+    <if_sid>5715</if_sid>
+    <description>Gauntlet: successful SSH authentication from $(srcip)</description>
+    <group>gauntlet_valid_accounts,authentication_success,</group>
+    <mitre><id>T1078</id></mitre>
+  </rule>
+
+  <!-- Compromise: a successful login from an IP with repeated failed attempts -->
+  <rule id="100202" level="12" frequency="2" timeframe="600">
+    <if_sid>5715</if_sid>
+    <if_matched_sid>5710</if_matched_sid>
+    <same_source_ip />
+    <description>Gauntlet: SSH login SUCCESS from $(srcip) after repeated failures — likely compromise</description>
+    <group>gauntlet_compromise,brute_force,</group>
+    <mitre><id>T1110.001</id><id>T1078</id></mitre>
+  </rule>
+
+  <!-- ============ Privilege Escalation: Sudo (T1548.003) ============ -->
+  <rule id="100210" level="8">
+    <if_sid>5405</if_sid>
+    <description>Gauntlet: unauthorized sudo attempt by $(srcuser)</description>
+    <group>gauntlet_privesc,</group>
+    <mitre><id>T1548.003</id></mitre>
+  </rule>
+
+  <rule id="100211" level="10" frequency="4" timeframe="120">
+    <if_matched_sid>100210</if_matched_sid>
+    <description>Gauntlet: sudo brute force — repeated unauthorized sudo attempts</description>
+    <group>gauntlet_privesc,brute_force,</group>
+    <mitre><id>T1548.003</id></mitre>
+  </rule>
+
+  <rule id="100212" level="6">
+    <if_sid>5402</if_sid>
+    <description>Gauntlet: successful sudo to ROOT by $(srcuser)</description>
+    <group>gauntlet_privesc,</group>
+    <mitre><id>T1548.003</id></mitre>
+  </rule>
+
+  <!-- ============ Persistence: Create Account (T1136.001) ============ -->
+  <rule id="100220" level="8">
+    <if_sid>5902</if_sid>
+    <description>Gauntlet: new local account created</description>
+    <group>gauntlet_persistence,</group>
+    <mitre><id>T1136.001</id></mitre>
+  </rule>
+
+  <rule id="100221" level="12">
+    <if_sid>100220</if_sid>
+    <field name="uid">^0$</field>
+    <description>Gauntlet: ROOT-level account created (uid=0) — backdoor account</description>
+    <group>gauntlet_persistence,</group>
+    <mitre><id>T1136.001</id></mitre>
+  </rule>
+
+  <rule id="100222" level="6">
+    <if_sid>5901</if_sid>
+    <description>Gauntlet: new group created</description>
+    <group>gauntlet_persistence,</group>
+    <mitre><id>T1136.001</id></mitre>
+  </rule>
+
+  <!-- ============ Persistence: Cron (T1053.003) ============ -->
+  <rule id="100230" level="8">
+    <if_sid>2833</if_sid>
+    <description>Gauntlet: root crontab modified — possible cron persistence</description>
+    <group>gauntlet_persistence,</group>
+    <mitre><id>T1053.003</id></mitre>
+  </rule>
+
+  <!-- ============ Account Manipulation (T1098) ============ -->
+  <rule id="100240" level="6">
+    <if_sid>5555</if_sid>
+    <description>Gauntlet: user password changed</description>
+    <group>gauntlet_account_manipulation,</group>
+    <mitre><id>T1098</id></mitre>
+  </rule>
+
+</group>

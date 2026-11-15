@@ -1,0 +1,2 @@
+Nov 15 18:47:00 target sudo:  datchi : TTY=pts/0 ; PWD=/root ; USER=root ; COMMAND=/bin/bash
+Nov 15 18:47:05 target sudo:  datchi : TTY=pts/0 ; PWD=/root ; USER=root ; COMMAND=/usr/bin/id

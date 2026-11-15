@@ -1,24 +1,126 @@
-# Which detection rule covers which MITRE ATT&CK (Enterprise) technique.
-# The scorer uses `technique` to join attacker actions to SIEM alerts, so this
-# file is the contract between the offensive log and the defensive rules.
+# Gauntlet detection coverage — which rule detects which MITRE ATT&CK technique,
+# and the fixture that proves it fires. The scorer joins attacker actions to SIEM
+# alerts on `technique`; pull_alerts.py keeps only these rule_ids (so Wazuh's base
+# events don't masquerade as false positives). Every `implemented` row is validated
+# by detections/test_detections.py via wazuh-logtest.
 coverage:
-  - technique: T1110.001          # Brute Force: Password Guessing
-    name: "SSH brute force"
+  # ---------- Credential Access / Valid Accounts ----------
+  - technique: T1110.001
+    tactic: credential-access
+    name: "SSH brute force (non-existent user)"
     source: wazuh
-    rule_ids: [100200, 100201]
+    rule_ids: [100200]
     fixture: fixtures/ssh_bruteforce.log
     status: implemented
+  - technique: T1110.001
+    tactic: credential-access
+    name: "SSH brute force (wrong password)"
+    source: wazuh
+    rule_ids: [100201]
+    fixture: fixtures/ssh_bruteforce_password.log
+    status: implemented
+  - technique: T1110.001
+    tactic: credential-access
+    name: "Compromise: SSH success from a brute-forcing IP"
+    source: wazuh
+    rule_ids: [100202]
+    fixture: fixtures/ssh_compromise.log
+    status: implemented
+  - technique: T1078
+    tactic: initial-access
+    name: "Valid Accounts: successful SSH authentication"
+    source: wazuh
+    rule_ids: [100203]
+    fixture: fixtures/ssh_success.log
+    status: implemented
 
-  - technique: T1190              # Exploit Public-Facing Application
-    name: "Web RCE (Drupalgeddon / WordPress)"
+  # ---------- Privilege Escalation ----------
+  - technique: T1548.003
+    tactic: privilege-escalation
+    name: "Unauthorized sudo attempt"
+    source: wazuh
+    rule_ids: [100210]
+    fixture: fixtures/sudo_unauthorized.log
+    status: implemented
+  - technique: T1548.003
+    tactic: privilege-escalation
+    name: "Sudo brute force (repeated unauthorized)"
+    source: wazuh
+    rule_ids: [100211]
+    fixture: fixtures/sudo_bruteforce.log
+    status: implemented
+  - technique: T1548.003
+    tactic: privilege-escalation
+    name: "Successful sudo to root"
+    source: wazuh
+    rule_ids: [100212]
+    fixture: fixtures/sudo_to_root.log
+    status: implemented
+
+  # ---------- Persistence ----------
+  - technique: T1136.001
+    tactic: persistence
+    name: "Create local account"
+    source: wazuh
+    rule_ids: [100220]
+    fixture: fixtures/account_created.log
+    status: implemented
+  - technique: T1136.001
+    tactic: persistence
+    name: "Create ROOT-level account (uid=0 backdoor)"
+    source: wazuh
+    rule_ids: [100221]
+    fixture: fixtures/account_created_root.log
+    status: implemented
+  - technique: T1136.001
+    tactic: persistence
+    name: "Create new group"
+    source: wazuh
+    rule_ids: [100222]
+    fixture: fixtures/group_created.log
+    status: implemented
+  - technique: T1053.003
+    tactic: persistence
+    name: "Cron: root crontab modified"
+    source: wazuh
+    rule_ids: [100230]
+    fixture: fixtures/cron_modified.log
+    status: implemented
+
+  # ---------- Account Manipulation ----------
+  - technique: T1098
+    tactic: persistence
+    name: "Account Manipulation: password changed"
+    source: wazuh
+    rule_ids: [100240]
+    fixture: fixtures/password_changed.log
+    status: implemented
+
+  # ---------- Backlog: need extra telemetry (next batch) ----------
+  # T1548.001 (SUID execution) needs auditd execve logging with a watch key on
+  #   SUID binaries, then a Wazuh rule on the audit events — a per-host agent
+  #   config, not a log-line fixture.
+  # T1190 (web RCE) and T1046 (network service scan) are NETWORK detections: they
+  #   need Zeek http/conn log decoders + live traffic to validate, which is the
+  #   M1-network batch (Zeek is already ingested into the manager).
+  - technique: T1548.001
+    tactic: privilege-escalation
+    name: "Abuse Elevation Control: SUID execution"
+    source: wazuh-auditd
+    rule_ids: []
+    fixture: null
+    status: planned-needs-auditd
+  - technique: T1190
+    tactic: initial-access
+    name: "Exploit Public-Facing Application (web RCE)"
     source: zeek
     rule_ids: []
     fixture: null
-    status: todo                  # M1 backlog
-
-  - technique: T1548.001          # Abuse Elevation Control: SUID
-    name: "SUID privesc"
-    source: wazuh
+    status: planned-needs-zeek
+  - technique: T1046
+    tactic: discovery
+    name: "Network Service Scanning (nmap)"
+    source: zeek
     rule_ids: []
     fixture: null
-    status: todo                  # M1 backlog
+    status: planned-needs-zeek

@@ -1,0 +1,6 @@
+Nov 15 18:46:00 target sudo:  mallory : user NOT in sudoers ; TTY=pts/0 ; PWD=/home/mallory ; USER=root ; COMMAND=/bin/bash
+Nov 15 18:46:02 target sudo:  mallory : user NOT in sudoers ; TTY=pts/0 ; PWD=/home/mallory ; USER=root ; COMMAND=/bin/sh
+Nov 15 18:46:04 target sudo:  mallory : user NOT in sudoers ; TTY=pts/0 ; PWD=/home/mallory ; USER=root ; COMMAND=/usr/bin/id
+Nov 15 18:46:06 target sudo:  mallory : user NOT in sudoers ; TTY=pts/0 ; PWD=/home/mallory ; USER=root ; COMMAND=/bin/bash
+Nov 15 18:46:08 target sudo:  mallory : user NOT in sudoers ; TTY=pts/0 ; PWD=/home/mallory ; USER=root ; COMMAND=/bin/su
+Nov 15 18:46:10 target sudo:  mallory : user NOT in sudoers ; TTY=pts/0 ; PWD=/home/mallory ; USER=root ; COMMAND=/bin/bash
