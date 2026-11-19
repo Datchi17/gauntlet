@@ -34,6 +34,21 @@ def test_cves_for_case_unions_products():
     assert got == {"CVE-2021-41773", "CVE-2021-42013", "CVE-2019-11043"}
 
 
+def test_cpe_lookup_uses_cpe_key():
+    cpe = "cpe:2.3:a:apache:http_server:2.4.49"
+    cache = {cpe: {"cves": ["CVE-2021-41773", "CVE-2021-42013"]}}
+    r = nvd_lookup.lookup("Apache", "2.4.49", cpe, cache=cache)
+    assert "CVE-2021-42013" in r["cves"]
+
+
+def test_cves_for_case_prefers_cpe_when_present():
+    cpe = "cpe:2.3:a:php:php:5.6.40"
+    cache = {cpe: {"cves": ["CVE-2019-11043"]},
+             "php 5.6.40": {"cves": ["should-not-be-used"]}}
+    case = {"products": [{"product": "PHP", "version": "5.6.40", "cpe": cpe}]}
+    assert nvd_lookup.cves_for_case(case, cache) == {"CVE-2019-11043"}
+
+
 def test_nvd_grounding_rescues_a_cited_cve():
     # a CVE not in the hand key but confirmed by NVD should score as a true positive
     import bench

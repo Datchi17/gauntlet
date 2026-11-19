@@ -61,51 +61,62 @@ def save_cache(cache: dict) -> None:
     CACHE_PATH.write_text(json.dumps(cache, indent=2, sort_keys=True) + "\n")
 
 
-def query_nvd(query: str, *, api_key: str | None = None, timeout: int = 30,
-              retries: int = 3) -> list[str]:
-    """Ask NVD which CVEs mention `query` (product + version). Returns sorted CVE ids.
-    Keyword search matches CVE *descriptions*, so it is recall-limited by how NVD
-    phrases versions (e.g. 'OpenSSH through 7.7' won't match '7.2p2') — that gap is
-    exactly what --audit surfaces, and why the hand key is kept, not replaced."""
-    params = urllib.parse.urlencode({"keywordSearch": query, "resultsPerPage": 100})
+def _nvd_cve_ids(params: dict, *, api_key: str | None = None, timeout: int = 30,
+                 retries: int = 3) -> list[str]:
+    """Run one NVD 2.0 query (params dict) and return its sorted CVE ids."""
+    qs = urllib.parse.urlencode({**params, "resultsPerPage": 100})
     headers = {"User-Agent": "gauntlet-bench/1.0"}  # generic UA, no personal info
     if api_key:
         headers["apiKey"] = api_key
-    req = urllib.request.Request(f"{NVD_URL}?{params}", headers=headers)
+    req = urllib.request.Request(f"{NVD_URL}?{qs}", headers=headers)
     for attempt in range(retries + 1):
         try:
             with urllib.request.urlopen(req, timeout=timeout) as r:
                 data = json.loads(r.read())
-            ids = {CVE_UP(v["cve"]["id"]) for v in data.get("vulnerabilities", [])}
-            return sorted(ids)
+            return sorted({CVE_UP(v["cve"]["id"]) for v in data.get("vulnerabilities", [])})
         except urllib.error.HTTPError as e:
-            # NVD throttles with 403/429 and flaps with 503; back off and retry
-            if e.code in (403, 429, 503) and attempt < retries:
+            if e.code in (403, 429, 503) and attempt < retries:   # throttle / flap
                 time.sleep(6 * (attempt + 1))
                 continue
-            raise SystemExit(f"NVD HTTP {e.code} for {query!r}: "
+            raise SystemExit(f"NVD HTTP {e.code} for {params}: "
                              f"{e.read().decode('utf-8', 'replace')[:300]}") from None
         except urllib.error.URLError as e:
             if attempt < retries:
                 time.sleep(3 * (attempt + 1))
                 continue
-            raise SystemExit(f"NVD unreachable for {query!r}: {e}") from None
+            raise SystemExit(f"NVD unreachable for {params}: {e}") from None
     return []
 
 
-def lookup(product: str, version: str, *, online: bool = False,
+def query_keyword(query: str, **kw) -> list[str]:
+    """Match CVE *descriptions* — recall-limited by how NVD phrases versions
+    ('OpenSSH through 7.7' won't match '7.2p2'). The loose fallback when no CPE."""
+    return _nvd_cve_ids({"keywordSearch": query}, **kw)
+
+
+def query_cpe(cpe: str, **kw) -> list[str]:
+    """Match a CPE against each CVE's configured vulnerable version *ranges*
+    (virtualMatchString). Precise: catches 7.2p2 ∈ 'through 7.7', and excludes
+    CVEs that only mention the version in prose. The exact path."""
+    return _nvd_cve_ids({"virtualMatchString": cpe}, **kw)
+
+
+def lookup(product: str, version: str, cpe: str | None = None, *, online: bool = False,
            api_key: str | None = None, cache: dict | None = None) -> dict:
-    """Resolve a product+version to its NVD CVE set, via cache. Offline by default:
-    a cache miss returns an empty set so scoring never depends on the network."""
+    """Resolve a product to its NVD CVE set, via cache. Uses CPE-exact matching when
+    a `cpe` is given (precise, range-aware), else keyword search (loose fallback).
+    Offline by default: a cache miss returns an empty set, so scoring never hits the
+    network. Cache keys are the cpe string, or '<product> <version>' for keyword."""
     own = cache is None
     cache = load_cache() if own else cache
-    k = _key(product, version)
+    k = cpe.lower() if cpe else _key(product, version)
     if k in cache:
         return cache[k]
     if not online:
         return {"query": k, "cves": [], "source": "offline-miss"}
-    cves = query_nvd(k, api_key=api_key)
-    cache[k] = {"query": k, "cves": cves, "source": "nvd",
+    cves = query_cpe(cpe, api_key=api_key) if cpe else query_keyword(k, api_key=api_key)
+    cache[k] = {"query": k, "method": "cpe" if cpe else "keyword", "cves": cves,
+                "source": "nvd",
                 "fetched": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")}
     if own:
         save_cache(cache)
@@ -117,7 +128,8 @@ def cves_for_case(case: dict, cache: dict | None = None) -> set[str]:
     cache = load_cache() if cache is None else cache
     out: set[str] = set()
     for p in case.get("products", []):
-        out |= {CVE_UP(c) for c in lookup(p["product"], p["version"], cache=cache)["cves"]}
+        entry = lookup(p["product"], p["version"], p.get("cpe"), cache=cache)
+        out |= {CVE_UP(c) for c in entry["cves"]}
     return out
 
 
@@ -132,12 +144,13 @@ def load_cases(cases_dir: Path = CASES_DIR) -> list[dict]:
 def build_cache(cases: list[dict], api_key: str | None = None) -> dict:
     cache = load_cache()
     pause = 1.0 if api_key else 6.5          # respect NVD's rate limit
-    todo = [(p["product"], p["version"]) for c in cases for p in c.get("products", [])]
-    for i, (product, version) in enumerate(todo):
-        k = _key(product, version)
-        entry = lookup(product, version, online=True, api_key=api_key, cache=cache)
-        print(f"[*] {k}: {len(entry['cves'])} CVEs ({', '.join(entry['cves'][:4])}"
-              f"{'...' if len(entry['cves']) > 4 else ''})", file=sys.stderr)
+    todo = [(p["product"], p["version"], p.get("cpe"))
+            for c in cases for p in c.get("products", [])]
+    for i, (product, version, cpe) in enumerate(todo):
+        entry = lookup(product, version, cpe, online=True, api_key=api_key, cache=cache)
+        print(f"[*] {entry['query']} [{entry.get('method', '?')}]: {len(entry['cves'])} CVEs "
+              f"({', '.join(entry['cves'][:4])}{'...' if len(entry['cves']) > 4 else ''})",
+              file=sys.stderr)
         save_cache(cache)
         if i < len(todo) - 1:
             time.sleep(pause)

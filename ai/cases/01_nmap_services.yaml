@@ -16,8 +16,8 @@ truth:
     - CVE-2021-41773  # Apache 2.4.49 path traversal / RCE
     - CVE-2017-7494   # Samba 3.5.0-4.6.4 remote code execution
 # Detected product+version pairs, for independent NVD grounding (ai/nvd_lookup.py).
-products:                        # use NVD's common product name, not nmap's daemon (httpd/smbd)
-  - {product: vsftpd, version: 2.3.4}
-  - {product: OpenSSH, version: 7.2p2}
-  - {product: Apache, version: 2.4.49}
-  - {product: Samba, version: 4.3.11}
+products:                        # cpe = NVD CPE 2.3 -> exact, version-range-aware matching
+  - {product: vsftpd,  version: 2.3.4,  cpe: "cpe:2.3:a:vsftpd_project:vsftpd:2.3.4"}
+  - {product: OpenSSH, version: 7.2p2,  cpe: "cpe:2.3:a:openbsd:openssh:7.2"}  # omit :p2 update — it over-constrains range matching
+  - {product: Apache,  version: 2.4.49, cpe: "cpe:2.3:a:apache:http_server:2.4.49"}
+  - {product: Samba,   version: 4.3.11, cpe: "cpe:2.3:a:samba:samba:4.3.11"}

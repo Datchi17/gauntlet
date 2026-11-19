@@ -60,7 +60,19 @@ python3 ai/nvd_lookup.py --audit     # hand key vs NVD, offline — corroboratio
 python3 ai/bench.py --provider api --nvd    # score with hand key ∪ NVD as the valid set
 ```
 
-NVD keyword search matches CVE *descriptions*, so it is **recall-limited**: a CVE phrased
-as "OpenSSH through 7.7" won't match a query for "7.2p2". That's why NVD **augments** the
-hand key rather than replacing it — `--audit` makes the agreement and the gaps explicit.
-Set `NVD_API_KEY` (free from nvd.nist.gov) to raise the rate limit from 5 to 50 req/30s.
+Two matching modes, chosen per product:
+- **CPE-exact** (when a `cpe:` is set on the product) — NVD `virtualMatchString` matches the
+  CPE against each CVE's configured vulnerable version **ranges**. Precise and range-aware:
+  it catches `OpenSSH 7.2p2 ∈ "through 7.7"` (CVE-2018-15473) and `Samba 4.3.11` → SambaCry,
+  which keyword search misses. With CPEs set, `--audit` confirms **4/4** of the nmap case's
+  hand key (vs 2/4 by keyword). Tip: omit the CPE `update` field (`:p2`) — it over-constrains
+  range matching.
+- **keyword** (fallback, no `cpe:`) — matches CVE *descriptions*; recall-limited by how NVD
+  phrases versions.
+
+Honest nuance: CPE matching returns *every* CVE applicable to that exact version (e.g. ~88 for
+Apache 2.4.49), because many genuinely apply. So NVD grounding answers **"is this a real,
+applicable CVE (not invented)?"** — not "is this *the* intended finding?" Only the hand key
+answers the latter. That's why NVD **augments** the hand key (corroboration + a strict
+invented-CVE check) rather than replacing it. Set `NVD_API_KEY` (free from nvd.nist.gov) to
+raise the rate limit from 5 to 50 req/30s.
