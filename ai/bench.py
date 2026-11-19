@@ -62,11 +62,13 @@ def entities(text: str) -> tuple[set[str], set[str]]:
     return cves, eps
 
 
-def score_case(case: dict, llm_text: str) -> dict:
+def score_case(case: dict, llm_text: str, extra_valid_cves: set[str] | None = None) -> dict:
     artifact = case["artifact"]
     truth = case.get("truth", {})
     t_eps = {norm_ep(e) for e in truth.get("endpoints", [])}
+    # answer key = hand-curated valid_cves, optionally ∪ an independent source (NVD)
     valid_cves = {c.upper() for c in truth.get("valid_cves", [])}
+    valid_cves |= {c.upper() for c in (extra_valid_cves or set())}
 
     def analyse(text: str) -> dict:
         cves, eps = entities(text)
@@ -109,7 +111,7 @@ def aggregate(rows: list[dict], which: str) -> dict:
     }
 
 
-def render(rows: list[dict], provider_name: str, runs: int = 1) -> str:
+def render(rows: list[dict], provider_name: str, runs: int = 1, nvd: bool = False) -> str:
     llm = aggregate(rows, "llm")
     base = aggregate(rows, "base")
     novel = sorted({e for r in rows for e in r["novel"]})
@@ -124,6 +126,7 @@ def render(rows: list[dict], provider_name: str, runs: int = 1) -> str:
         "",
         f"- **Model under test:** {provider_name}",
         f"- **Cases:** {n_cases} × {runs} run(s) = {len(rows)} scored passes",
+        f"- **CVE grounding:** {'hand key ∪ NVD (independent)' if nvd else 'hand-curated answer key'}",
         f"- **Verdict:** this model {verdict} — novel signal {len(novel)} distinct real "
         f"findings vs {mean_halluc:.1f} hallucinated/run ({llm['hallucination']} of what it cited).",
         "",
@@ -166,6 +169,8 @@ def main() -> int:
     p = argparse.ArgumentParser(description="Gauntlet LLM-recon benchmark")
     p.add_argument("--provider", default="ollama", choices=["ollama", "api", "dry-run", "replay"])
     p.add_argument("--runs", type=int, default=1, help="passes per case; metrics pooled over all runs")
+    p.add_argument("--nvd", action="store_true",
+                   help="also ground cited CVEs against NVD (offline, from ai/nvd_cache.json)")
     p.add_argument("--replay-file", help="for --provider replay")
     p.add_argument("--cases", type=Path, default=HERE / "cases")
     p.add_argument("--out", type=Path)
@@ -176,16 +181,27 @@ def main() -> int:
     if not cases:
         sys.exit(f"no cases in {args.cases}")
 
+    nvd_cache = None
+    if args.nvd:
+        import nvd_lookup  # noqa: E402
+        nvd_cache = nvd_lookup.load_cache()
+        if not nvd_cache:
+            sys.exit("--nvd: ai/nvd_cache.json is empty — run `python3 ai/nvd_lookup.py --build`")
+
     rows = []
     for c in cases:
+        extra = None
+        if args.nvd:
+            import nvd_lookup
+            extra = nvd_lookup.cves_for_case(c, nvd_cache)
         for i in range(args.runs):
             llm_text = prov.generate(PROMPT.replace("{artifact}", c["artifact"]))
-            rows.append(score_case(c, llm_text))
+            rows.append(score_case(c, llm_text, extra_valid_cves=extra))
             tag = f"{c['id']} run {i + 1}/{args.runs}" if args.runs > 1 else c["id"]
             print(f"[*] {tag}: cited={rows[-1]['llm']['cited']} "
                   f"tp={rows[-1]['llm']['tp']} halluc={rows[-1]['llm']['halluc']}", file=sys.stderr)
 
-    report = render(rows, getattr(prov, "model", prov.name), runs=args.runs)
+    report = render(rows, getattr(prov, "model", prov.name), runs=args.runs, nvd=args.nvd)
     print(report)
     if args.out:
         args.out.write_text(report)

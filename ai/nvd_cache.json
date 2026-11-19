@@ -1,0 +1,48 @@
+{
+  "apache 2.4.49": {
+    "cves": [
+      "CVE-2021-41773",
+      "CVE-2021-42013"
+    ],
+    "fetched": "2026-11-19T15:57:27Z",
+    "query": "apache 2.4.49",
+    "source": "nvd"
+  },
+  "openssh 7.2p2": {
+    "cves": [
+      "CVE-2015-8325",
+      "CVE-2016-3115"
+    ],
+    "fetched": "2026-11-19T15:57:20Z",
+    "query": "openssh 7.2p2",
+    "source": "nvd"
+  },
+  "php 5.6.40": {
+    "cves": [
+      "CVE-2019-6977",
+      "CVE-2019-9020",
+      "CVE-2019-9021",
+      "CVE-2019-9023",
+      "CVE-2019-9024"
+    ],
+    "fetched": "2026-11-19T15:57:48Z",
+    "query": "php 5.6.40",
+    "source": "nvd"
+  },
+  "samba 4.3.11": {
+    "cves": [
+      "CVE-2016-2119"
+    ],
+    "fetched": "2026-11-19T15:57:34Z",
+    "query": "samba 4.3.11",
+    "source": "nvd"
+  },
+  "vsftpd 2.3.4": {
+    "cves": [
+      "CVE-2011-2523"
+    ],
+    "fetched": "2026-11-19T15:57:13Z",
+    "query": "vsftpd 2.3.4",
+    "source": "nvd"
+  }
+}

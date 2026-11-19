@@ -29,11 +29,11 @@ The `api` provider works with any OpenAI-compatible endpoint, including free tie
 Use your own free key — nothing here spends money.
 
 ```bash
-# Groq (free, no card) — a big model (Llama 3.3 70B)
+# Groq (free, no card) — a big model (gpt-oss-120b; check the console for current names)
 GAUNTLET_API_BASE=https://api.groq.com/openai/v1 \
-GAUNTLET_API_MODEL=llama-3.3-70b-versatile \
+GAUNTLET_API_MODEL=openai/gpt-oss-120b \
 GAUNTLET_API_KEY=gsk_your_free_key \
-  python3 ai/bench.py --provider api --out ai/BENCHMARK_groq.md
+  python3 ai/bench.py --provider api --runs 5 --out ai/BENCHMARK_groq.md
 
 # Google Gemini (free via AI Studio, no card)
 GAUNTLET_API_BASE=https://generativelanguage.googleapis.com/v1beta/openai \
@@ -45,3 +45,22 @@ GAUNTLET_API_KEY=your_free_key \
 Get a free Groq key at console.groq.com or a Gemini key at aistudio.google.com.
 Rate limits and model names change — check the provider page. Our cases are
 synthetic (public CVEs, fake endpoints), so free-tier data-use terms don't matter here.
+
+## Independent CVE grounding — NVD (`nvd_lookup.py`)
+
+The answer key (`valid_cves` in each case) is hand-curated. `nvd_lookup.py` lets it
+be corroborated by **NIST's NVD** instead of asserted alone: it maps a case's declared
+`products:` (product + version) to the CVE ids NVD associates with them, caching to
+`nvd_cache.json` so the benchmark stays **offline, deterministic and CI-safe** — the
+network is touched only by `--build`.
+
+```bash
+python3 ai/nvd_lookup.py --build     # refresh the cache from NVD (network, rate-limited)
+python3 ai/nvd_lookup.py --audit     # hand key vs NVD, offline — corroboration + gaps
+python3 ai/bench.py --provider api --nvd    # score with hand key ∪ NVD as the valid set
+```
+
+NVD keyword search matches CVE *descriptions*, so it is **recall-limited**: a CVE phrased
+as "OpenSSH through 7.7" won't match a query for "7.2p2". That's why NVD **augments** the
+hand key rather than replacing it — `--audit` makes the agreement and the gaps explicit.
+Set `NVD_API_KEY` (free from nvd.nist.gov) to raise the rate limit from 5 to 50 req/30s.
