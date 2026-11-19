@@ -31,13 +31,9 @@ import re
 import sys
 from pathlib import Path
 
-try:
-    import yaml
-except ImportError:
-    sys.exit("needs pyyaml")
-
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-import providers  # noqa: E402
+import providers  # noqa: E402  (yaml imported lazily in main(), so this module
+# imports cleanly without pyyaml — keeps the scorer unit tests runnable in CI)
 
 HERE = Path(__file__).resolve().parent
 PROMPT = (HERE / "prompts" / "recon_analysis.txt").read_text()
@@ -176,6 +172,10 @@ def main() -> int:
     p.add_argument("--out", type=Path)
     args = p.parse_args()
 
+    try:
+        import yaml
+    except ImportError:
+        sys.exit("needs pyyaml (pip install pyyaml)")
     prov = providers.get(args.provider, file=args.replay_file)
     cases = [yaml.safe_load(f.read_text()) for f in sorted(args.cases.glob("*.yaml"))]
     if not cases:

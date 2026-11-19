@@ -34,10 +34,9 @@ import urllib.request
 from datetime import datetime, timezone
 from pathlib import Path
 
-try:
-    import yaml
-except ImportError:
-    sys.exit("needs pyyaml")
+# NB: yaml is imported lazily in load_cases() only — the library functions
+# (lookup/cves_for_case) are stdlib-only, so importing this module never fails
+# even where pyyaml is absent (e.g. CI), and its unit tests run there.
 
 HERE = Path(__file__).resolve().parent
 CACHE_PATH = HERE / "nvd_cache.json"
@@ -123,6 +122,10 @@ def cves_for_case(case: dict, cache: dict | None = None) -> set[str]:
 
 
 def load_cases(cases_dir: Path = CASES_DIR) -> list[dict]:
+    try:
+        import yaml
+    except ImportError:
+        sys.exit("needs pyyaml (pip install pyyaml)")
     return [yaml.safe_load(f.read_text()) for f in sorted(cases_dir.glob("*.yaml"))]
 
 
