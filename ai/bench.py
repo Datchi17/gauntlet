@@ -62,25 +62,30 @@ def score_case(case: dict, llm_text: str, extra_valid_cves: set[str] | None = No
     artifact = case["artifact"]
     truth = case.get("truth", {})
     t_eps = {norm_ep(e) for e in truth.get("endpoints", [])}
-    # answer key = hand-curated valid_cves, optionally ∪ an independent source (NVD)
-    valid_cves = {c.upper() for c in truth.get("valid_cves", [])}
-    valid_cves |= {c.upper() for c in (extra_valid_cves or set())}
+    # grounding set = hand key ∪ optional independent source (NVD): decides what counts
+    # as a REAL (not invented) CVE. The recall target stays the hand key only — the
+    # *intended* findings — so NVD's hundreds of applicable CVEs don't bloat the
+    # recall denominator (that was making recall read ~3% under --nvd).
+    hand_cves = {c.upper() for c in truth.get("valid_cves", [])}
+    grounding_cves = hand_cves | {c.upper() for c in (extra_valid_cves or set())}
 
     def analyse(text: str) -> dict:
         cves, eps = entities(text)
         grounded_eps = {e for e in eps if e in artifact}
         halluc_eps = eps - grounded_eps
         tp_eps = grounded_eps & t_eps
-        tp_cves = cves & valid_cves
-        halluc_cves = cves - valid_cves           # CVE not in the real applicable set
+        tp_cves = cves & grounding_cves           # grounded = real/applicable (precision, novel)
+        halluc_cves = cves - grounding_cves       # invented / not applicable to any version
+        rec_cves = cves & hand_cves               # intended findings only (recall)
         cited = len(cves) + len(eps)
-        tp = len(tp_eps) + len(tp_cves)
+        tp = len(tp_eps) + len(tp_cves)           # grounded true positives -> precision
+        rec_tp = len(tp_eps) + len(rec_cves)      # vs the hand key -> recall
         halluc = len(halluc_eps) + len(halluc_cves)
         return {
-            "cited": cited, "tp": tp, "halluc": halluc,
+            "cited": cited, "tp": tp, "rec_tp": rec_tp, "halluc": halluc,
             "tp_eps": tp_eps, "tp_cves": tp_cves,
             "halluc_eps": halluc_eps, "halluc_cves": halluc_cves,
-            "n_truth": len(t_eps) + len(valid_cves),
+            "n_truth": len(t_eps) + len(hand_cves),
         }
 
     llm = analyse(llm_text)
@@ -97,12 +102,13 @@ def _rate(num: int, den: int) -> str:
 def aggregate(rows: list[dict], which: str) -> dict:
     cited = sum(r[which]["cited"] for r in rows)
     tp = sum(r[which]["tp"] for r in rows)
+    rec_tp = sum(r[which]["rec_tp"] for r in rows)
     halluc = sum(r[which]["halluc"] for r in rows)
     truth = sum(r[which]["n_truth"] for r in rows)
     return {
         "cited": cited, "tp": tp, "halluc": halluc, "truth": truth,
         "precision": _rate(tp, cited),
-        "recall": _rate(tp, truth),
+        "recall": _rate(rec_tp, truth),          # recall vs the hand key (intended findings)
         "hallucination": _rate(halluc, cited),
     }
 

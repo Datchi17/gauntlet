@@ -43,26 +43,37 @@ So the defensible design is a **two-layer analyst**:
 
 ## Does independent (NVD) grounding change the verdict? — matched 5-run
 
-The answer key is hand-curated. We re-scored the **same generations** with
-`--nvd` (hand key ∪ NVD-confirmed CVEs), so the only variable is the grounding —
-no run-to-run noise. See `ai/nvd_lookup.py`, `ai/BENCHMARK_groq_nvd.md`.
+The answer key is hand-curated. We re-scored the **same generations** with `--nvd`
+(grounding = hand key ∪ NVD-confirmed CVEs via **CPE-exact, range-aware** matching),
+so the only variable is the grounding — no run-to-run noise. CPE matching confirms
+**4/4** of the nmap case's hand key (it catches OpenSSH user-enum CVE-2018-15473 and
+SambaCry CVE-2017-7494, which description keyword search missed: 2/4). See
+`ai/nvd_lookup.py --audit`, `ai/BENCHMARK_groq_nvd.md`.
 
-| Model | Hallucination (hand key) | Hallucination (∪ NVD) | Novel (hand → ∪NVD) |
+| Model | Hallucination (hand key) | Hallucination (∪ NVD) | Novel |
 |---|---|---|---|
-| qwen-3B | 47% | 47% | 1 → 1 |
-| gpt-oss-20B | 25% | 25% | 0 → 0 |
-| gpt-oss-120B | 19% | **11%** | 4 → 5 |
+| qwen-3B | 50% | 50% | 1 |
+| gpt-oss-20B | 6% | 6% | 0 |
+| gpt-oss-120B | 16% | **8%** | 4 → 5 |
 
-**The finding: NVD grounding only moves the 120B.** The 3B and 20B cite nothing
-real that the hand key missed — NVD's silence *confirms* their hallucinations are
-genuine invention, not answer-key gaps. Only the 120B is capable enough to surface
-real CVEs we hadn't listed (e.g. CVE-2021-42013, the Apache follow-up), so **~8 of
-its 19 apparent hallucination-points are answer-key incompleteness, not model
-error** — its true rate is ~11%, and it crosses from "does not earn its place" to
-**earns its place**. This sharpens both ends of the story: the small models' skeptical
-verdict is independently corroborated, and the frontier model is judged more fairly.
-(The 120B's hand-key rate reads 19% here vs 22% in the sweep above — ordinary 5-run
-nondeterminism; the trustworthy signal is the *matched* 19→11 delta.)
+**The finding: NVD grounding only moves the 120B.** The 3B and 20B cite nothing real
+the hand key missed — their CVE citations are either already listed or genuinely
+invented IDs applicable to *no* detected version, so NVD can't rescue them. Only the
+120B cites real, applicable CVEs we hadn't listed (e.g. CVE-2021-42013), so **~half of
+its apparent CVE-hallucination is answer-key incompleteness, not invention** — grounded
+against NIST it drops 16% → 8% and comfortably **earns its place**. The small models'
+skeptical verdict is independently corroborated; the frontier model is judged fairly.
+
+Two honest caveats:
+- **Grounding ≠ pertinence.** CPE matching returns *every* CVE applicable to a version
+  (~88 for Apache 2.4.49), so NVD answers *"is this a real, applicable CVE?"* — never
+  *"is this the intended finding?"* Only the hand key answers the latter, so NVD
+  **corroborates** the key and adds a strict invented-CVE check; it does not replace it.
+  (Recall is therefore measured against the hand key, not the NVD-augmented set — else
+  it reads a meaningless ~3%.)
+- **Nondeterminism.** Hand-key hallucination wobbles run-to-run — the 20B especially
+  (25% in the sweep above, 6% here; it is terse and high-variance). Trust the *matched*
+  within-pair deltas (120B 16→8), not cross-sweep absolute numbers.
 
 ---
 *Reproduce:* `python3 ai/bench.py --provider api --runs 5` with

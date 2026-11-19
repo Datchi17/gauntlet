@@ -56,3 +56,14 @@ def test_nvd_grounding_rescues_a_cited_cve():
     r = bench.score_case(case, "CVE-2021-42013 applies",
                          extra_valid_cves={"CVE-2021-42013"})["llm"]
     assert r["tp"] == 1 and r["halluc"] == 0
+
+
+def test_nvd_does_not_dilute_recall_denominator():
+    # NVD expands the grounding set, but the recall target stays the hand key, so
+    # hundreds of applicable CVEs must not inflate n_truth (the recall denominator).
+    import bench
+    case = {"id": "t", "artifact": "Apache 2.4.49",
+            "truth": {"endpoints": [], "valid_cves": ["CVE-2021-41773"]}}
+    r = bench.score_case(case, "CVE-2021-41773",
+                         extra_valid_cves={"CVE-9999-0001", "CVE-9999-0002"})["llm"]
+    assert r["n_truth"] == 1 and r["rec_tp"] == 1
