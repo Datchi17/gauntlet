@@ -41,6 +41,29 @@ So the defensible design is a **two-layer analyst**:
 **Bottom line for operators:** use the LLM to *propose*, the baseline + a human to
 *trust*. Capacity buys you less noise and more signal, not autonomy.
 
+## Does independent (NVD) grounding change the verdict? — matched 5-run
+
+The answer key is hand-curated. We re-scored the **same generations** with
+`--nvd` (hand key ∪ NVD-confirmed CVEs), so the only variable is the grounding —
+no run-to-run noise. See `ai/nvd_lookup.py`, `ai/BENCHMARK_groq_nvd.md`.
+
+| Model | Hallucination (hand key) | Hallucination (∪ NVD) | Novel (hand → ∪NVD) |
+|---|---|---|---|
+| qwen-3B | 47% | 47% | 1 → 1 |
+| gpt-oss-20B | 25% | 25% | 0 → 0 |
+| gpt-oss-120B | 19% | **11%** | 4 → 5 |
+
+**The finding: NVD grounding only moves the 120B.** The 3B and 20B cite nothing
+real that the hand key missed — NVD's silence *confirms* their hallucinations are
+genuine invention, not answer-key gaps. Only the 120B is capable enough to surface
+real CVEs we hadn't listed (e.g. CVE-2021-42013, the Apache follow-up), so **~8 of
+its 19 apparent hallucination-points are answer-key incompleteness, not model
+error** — its true rate is ~11%, and it crosses from "does not earn its place" to
+**earns its place**. This sharpens both ends of the story: the small models' skeptical
+verdict is independently corroborated, and the frontier model is judged more fairly.
+(The 120B's hand-key rate reads 19% here vs 22% in the sweep above — ordinary 5-run
+nondeterminism; the trustworthy signal is the *matched* 19→11 delta.)
+
 ---
 *Reproduce:* `python3 ai/bench.py --provider api --runs 5` with
 `GAUNTLET_API_MODEL=openai/gpt-oss-120b` (see `ai/README.md`). Per-model reports:
