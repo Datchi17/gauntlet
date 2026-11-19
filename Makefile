@@ -6,7 +6,7 @@ PYTHON ?= python3
 
 .DEFAULT_GOAL := help
 
-.PHONY: help up down revert status run score test clean
+.PHONY: help up down revert status vms run score test clean
 
 help:  ## show this help
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) \
@@ -22,7 +22,10 @@ down:  ## power off the lab
 revert:  ## reset all targets to their clean snapshot
 	bash lab/targets/revert.sh --all
 
-status:  ## show lab VM + SIEM state
+status:  ## honest detection coverage table (live vs fixture), generated from attack-map.yaml
+	$(PYTHON) detections/coverage_report.py
+
+vms:  ## show lab VM + SIEM state
 	@VBoxManage list runningvms 2>/dev/null || echo "VirtualBox not found"
 
 SCENARIO ?= attack/scenarios/ssh-bruteforce-localhost.yaml

@@ -1,8 +1,15 @@
 # Gauntlet detection coverage — which rule detects which MITRE ATT&CK technique,
 # and the fixture that proves it fires. The scorer joins attacker actions to SIEM
 # alerts on `technique`; pull_alerts.py keeps only these rule_ids (so Wazuh's base
-# events don't masquerade as false positives). Every `implemented` row is validated
-# by detections/test_detections.py via wazuh-logtest.
+# events don't masquerade as false positives).
+#
+# `validation` is deliberately honest and is the headline status of this project:
+#   live    = fired end-to-end by a REAL attack against live telemetry, then
+#             scored by the loop (ground-truth action <-> real SIEM alert).
+#   fixture = the rule fires on a hand-written sample log via wazuh-logtest
+#             (detections/test_detections.py), but has NOT yet been tripped by a
+#             real attack. This proves the rule's logic, NOT the end-to-end claim.
+# Run `python3 detections/coverage_report.py` (or `make status`) for the summary.
 coverage:
   # ---------- Credential Access / Valid Accounts ----------
   - technique: T1110.001
@@ -12,6 +19,7 @@ coverage:
     rule_ids: [100200]
     fixture: fixtures/ssh_bruteforce.log
     status: implemented
+    validation: live          # proven end-to-end: hydra -> rule 100200, scored by the loop
   - technique: T1110.001
     tactic: credential-access
     name: "SSH brute force (wrong password)"
@@ -19,6 +27,7 @@ coverage:
     rule_ids: [100201]
     fixture: fixtures/ssh_bruteforce_password.log
     status: implemented
+    validation: fixture
   - technique: T1110.001
     tactic: credential-access
     name: "Compromise: SSH success from a brute-forcing IP"
@@ -26,6 +35,7 @@ coverage:
     rule_ids: [100202]
     fixture: fixtures/ssh_compromise.log
     status: implemented
+    validation: fixture
   - technique: T1078
     tactic: initial-access
     name: "Valid Accounts: successful SSH authentication"
@@ -33,6 +43,7 @@ coverage:
     rule_ids: [100203]
     fixture: fixtures/ssh_success.log
     status: implemented
+    validation: fixture
 
   # ---------- Privilege Escalation ----------
   - technique: T1548.003
@@ -42,6 +53,7 @@ coverage:
     rule_ids: [100210]
     fixture: fixtures/sudo_unauthorized.log
     status: implemented
+    validation: fixture
   - technique: T1548.003
     tactic: privilege-escalation
     name: "Sudo brute force (repeated unauthorized)"
@@ -49,6 +61,7 @@ coverage:
     rule_ids: [100211]
     fixture: fixtures/sudo_bruteforce.log
     status: implemented
+    validation: fixture
   - technique: T1548.003
     tactic: privilege-escalation
     name: "Successful sudo to root"
@@ -56,6 +69,7 @@ coverage:
     rule_ids: [100212]
     fixture: fixtures/sudo_to_root.log
     status: implemented
+    validation: fixture
 
   # ---------- Persistence ----------
   - technique: T1136.001
@@ -65,6 +79,7 @@ coverage:
     rule_ids: [100220]
     fixture: fixtures/account_created.log
     status: implemented
+    validation: fixture
   - technique: T1136.001
     tactic: persistence
     name: "Create ROOT-level account (uid=0 backdoor)"
@@ -72,6 +87,7 @@ coverage:
     rule_ids: [100221]
     fixture: fixtures/account_created_root.log
     status: implemented
+    validation: fixture
   - technique: T1136.001
     tactic: persistence
     name: "Create new group"
@@ -79,6 +95,7 @@ coverage:
     rule_ids: [100222]
     fixture: fixtures/group_created.log
     status: implemented
+    validation: fixture
   - technique: T1053.003
     tactic: persistence
     name: "Cron: root crontab modified"
@@ -86,6 +103,7 @@ coverage:
     rule_ids: [100230]
     fixture: fixtures/cron_modified.log
     status: implemented
+    validation: fixture
 
   # ---------- Account Manipulation ----------
   - technique: T1098
@@ -95,6 +113,7 @@ coverage:
     rule_ids: [100240]
     fixture: fixtures/password_changed.log
     status: implemented
+    validation: fixture
 
   # ---------- Discovery (Zeek network telemetry) ----------
   - technique: T1046
@@ -104,6 +123,7 @@ coverage:
     rule_ids: [100301]
     fixture: fixtures/zeek_portscan.log
     status: implemented
+    validation: fixture
 
   # ---------- Initial Access (Zeek network telemetry) ----------
   - technique: T1190
@@ -113,6 +133,7 @@ coverage:
     rule_ids: [100310]
     fixture: fixtures/zeek_web_rce.log
     status: implemented
+    validation: fixture
 
   # ---------- Privilege Escalation (auditd execve telemetry) ----------
   # Needs detections/auditd/gauntlet-suid.rules deployed on the monitored host.
@@ -123,3 +144,4 @@ coverage:
     rule_ids: [100320]
     fixture: fixtures/auditd_suid.log
     status: implemented
+    validation: fixture
